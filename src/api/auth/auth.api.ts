@@ -38,6 +38,17 @@ export async function signupUser(signupData: SignupDataType) {
   return user;
 }
 
+export async function logout() {
+  const res = await fetch(`${backendUrl}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to logout");
+  }
+}
+
 export async function getMe() {
   const res = await fetch(`${backendUrl}/api/auth/me`, {
     credentials: "include",

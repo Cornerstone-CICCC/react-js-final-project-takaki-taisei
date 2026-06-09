@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router";
-import PublickOnluRoute from "./pages/PublickOnluRoute";
+import PublicOnlyRoute from "./pages/PublicOnlyRoute";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ProtectedRoute from "./pages/ProtectedRoute";
@@ -11,17 +11,28 @@ import { userStore } from "./store/userStore";
 function App() {
   const setUser = userStore((state) => state.setUser);
   const clearUser = userStore((state) => state.clearUser);
+  const setIsLoading = userStore((state) => state.setIsLoading);
 
   useEffect(() => {
     async function getAndSetUser() {
-      const user = await getMe();
-      setUser(user);
+      try {
+        setIsLoading(true);
+        const user = await getMe();
+        setUser(user);
+      } catch (e) {
+        clearUser();
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, []);
+
+    getAndSetUser();
+  }, [setUser, clearUser, setIsLoading]);
+
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" />} />
-      <Route element={<PublickOnluRoute />}>
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
       </Route>

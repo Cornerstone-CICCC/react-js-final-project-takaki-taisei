@@ -1,6 +1,6 @@
 import { Mail, UserRound, Lock, GlobeLock, ShieldUser } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { signupUser } from "../api/auth/auth.api";
 import { userStore } from "../store/userStore";
 
@@ -12,6 +12,8 @@ function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const setUser = userStore((state) => state.setUser);
 
+  const navigate = useNavigate();
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -20,6 +22,7 @@ function SignupPage() {
     try {
       const user = await signupUser({ username, email, password });
       setUser(user);
+      navigate("/dashboard");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to sign up");
     } finally {
@@ -113,7 +116,7 @@ function SignupPage() {
               </div>
             </div>
             <div className="flex items-start gap-sm px-base">
-              <div className="pt-[2px]">
+              <div className="pt-0.5">
                 <input
                   className="w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary transition-all cursor-pointer"
                   id="terms"

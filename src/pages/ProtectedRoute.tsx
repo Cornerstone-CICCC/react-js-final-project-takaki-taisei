@@ -14,7 +14,7 @@ function ProtectedRoute() {
     return <Outlet />;
   }
 
-  return <Navigate to="/login" />;
+  return <Navigate to="/login" replace />;
 }
 
 export default ProtectedRoute;

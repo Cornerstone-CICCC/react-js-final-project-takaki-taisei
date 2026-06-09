@@ -1,6 +1,6 @@
 import { Lock, Mail } from "lucide-react";
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { useState, type SubmitEvent } from "react";
+import { Link, useNavigate } from "react-router";
 import { loginUser } from "../api/auth/auth.api";
 import { userStore } from "../store/userStore";
 
@@ -11,7 +11,9 @@ function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const setUser = userStore((state) => state.setUser);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const navigate = useNavigate();
+
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setIsSubmitting(true);
@@ -19,6 +21,7 @@ function LoginPage() {
     try {
       const user = await loginUser({ email, password });
       setUser(user);
+      navigate("/dashboard");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to log in");
     } finally {
@@ -55,7 +58,7 @@ function LoginPage() {
               <div className="relative flex items-center">
                 <Mail className="material-symbols-outlined absolute left-md text-outline" />
                 <input
-                  className="w-full pl-[50px] pr-md py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                  className="w-full pl-12.5 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                   id="email"
                   name="email"
                   placeholder="john@example.com"

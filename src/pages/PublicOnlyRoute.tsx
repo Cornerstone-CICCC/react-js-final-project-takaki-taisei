@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router";
 import { userStore } from "../store/userStore";
 import Spinner from "../components/Spinner";
 
-function PublickOnluRoute() {
+function PublicOnlyRoute() {
   const isAuthenticated = userStore((state) => state.isAuthenticated);
   const isLoading = userStore((state) => state.isLoading);
 
@@ -14,7 +14,7 @@ function PublickOnluRoute() {
     return <Outlet />;
   }
 
-  return <Navigate to="/dashboard" />;
+  return <Navigate to="/dashboard" replace />;
 }
 
-export default PublickOnluRoute;
+export default PublicOnlyRoute;
