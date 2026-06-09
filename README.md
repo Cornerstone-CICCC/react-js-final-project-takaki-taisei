@@ -1,63 +1,73 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/j4VGY5vj)
-# React JS - Final Project
+# React + TypeScript + Vite
 
-**Objective:** Create a full-stack application using the technologies you've learned throughout the program.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Instructions 📋
+Currently, two official plugins are available:
 
-1. Decide as a team of what you wish to build. You only have one week so try to limit your features of your MVP.
-2. Choose your technology stack (e.g. React, Node, NextJS, etc.) based on what you think fits best.
-3. Utilize GitHub Projects for your tasks.
-4. Create and name your branches accordingly depending on the type of task you are working on.
-5. Make use of automation tools such as [Prettier](https://prettier.io/), [ESLint](https://eslint.org/), [Husky](https://www.npmjs.com/package/husky), or even [Biome](https://www.npmjs.com/package/@biomejs/biome)!
-6. Commit and push your final changes to the `main` branch by the end of the project week.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Features ✅
+## React Compiler
 
-Unlike previous projects, for this project you have the freedom to choose what you want to build. However, you need to use the technologies listed below in some form in your web application.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### Frontend 👩🏻‍🎨
+## Expanding the ESLint configuration
 
-Choose at least one:
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-- React
-- NextJS
-- Any React-based framework/library such as Remix, React Native, etc.
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-### Backend 👨🏻‍🔧
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-- NodeJS or NextJS
-- WebSockets such as [Socket.IO](https://socket.io/)
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-### Database 🧑🏻‍🏫
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-Choose at least one:
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-- MongoDB with Mongoose
-- PostgreSQL with Prisma
-- Other database systems are allowed if you wish to take time to learn them (e.g. Supabase, Firebase, etc.)
-
-### Authentication 👮🏻
-
-- User signup and login
-- Password strength checker such as [zxcvbn](https://www.npmjs.com/package/zxcvbn)
-- Cookies (optionally you can store JWT for extra security)
-
-### Deployment 🤖
-
-Depending on your stack, deploy your project through any of these free platforms:
-
-- [Vercel](https://vercel.com/)
-- [Render](https://render.com/)
-
-You can also choose to self-deploy in a custom server such as AWS or Google Cloud.
-
-## Additional Information ℹ️
-
-- Your MVP needs to be responsive.
-- Design an ERD first before creating your database. This will help you layout how your data are connected and stored.
-- Make sure to store any API keys and other credentials inside your `.env` files. Never commit them into your respoitory!
-- Protect your CRUD API routes. For example, a user who is not logged in should not be able to send `PUT` and `DELETE` requests. The same goes with your pages, a user who is not logged in should not be able to access a page like `/my-account`.
-- Communicate with your teammates.
-
-_Good luck with your project and looking forward to your work 🎉🎉🎉_
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
