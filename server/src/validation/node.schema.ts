@@ -1,30 +1,27 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const nameSchema = z
   .string()
   .trim()
-  .min(1, 'name is required')
-  .max(255, 'name is too long')
-  .refine((n) => !n.includes('/'), { message: 'name cannot contain "/"' });
+  .min(1, "name is required")
+  .max(255, "name is too long")
+  .refine((n) => !n.includes("/"), { message: 'name cannot contain "/"' });
 
 export const createNodeSchema = z.object({
   name: nameSchema,
-  type: z.enum(['FILE', 'FOLDER']),
+  type: z.enum(["FILE", "FOLDER"]),
   parentId: z.string().min(1).optional(),
   content: z.string().optional(),
 });
 
 export const updateNodeSchema = z
-  .object({
-    name: nameSchema.optional(),
-    content: z.string().optional(),
-  })
+  .object({ name: nameSchema.optional(), content: z.string().optional() })
   .refine((d) => d.name !== undefined || d.content !== undefined, {
-    message: 'Provide at least one of: name, content',
+    message: "Provide at least one of: name, content",
   });
 
 export const moveNodeSchema = z.object({
-  parentId: z.string().min(1, 'parentId is required'),
+  parentId: z.string().min(1, "parentId is required"),
 });
 
 export const searchSchema = z.object({

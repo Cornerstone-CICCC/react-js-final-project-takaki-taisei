@@ -28,29 +28,29 @@ The interactive Swagger UI at http://localhost:4000/api/docs makes each step a c
 
 Handy scripts:
 
-| Script                 | What it does                                  |
-| ---------------------- | --------------------------------------------- |
-| `npm run dev`          | Start the API in watch mode                   |
-| `npm run build`        | Type-check + compile to `dist/`               |
-| `npm start`            | Run the compiled server (`dist/server.js`)    |
-| `npm run seed`         | Re-seed sample folders/files (idempotent)     |
-| `npm run db:reset`     | Drop, re-migrate, and re-seed the database    |
-| `npm run prisma:studio`| Open Prisma Studio to inspect the DB          |
+| Script                  | What it does                               |
+| ----------------------- | ------------------------------------------ |
+| `npm run dev`           | Start the API in watch mode                |
+| `npm run build`         | Type-check + compile to `dist/`            |
+| `npm start`             | Run the compiled server (`dist/server.js`) |
+| `npm run seed`          | Re-seed sample folders/files (idempotent)  |
+| `npm run db:reset`      | Drop, re-migrate, and re-seed the database |
+| `npm run prisma:studio` | Open Prisma Studio to inspect the DB       |
 
 ## Data model
 
 A single self-referential `Node` table models both folders and files:
 
-| Field      | Notes                                                       |
-| ---------- | ----------------------------------------------------------- |
-| `id`       | `cuid` (the root folder has the fixed id `root`)            |
-| `name`     | unique among siblings in the same folder                    |
-| `type`     | `"FILE"` or `"FOLDER"`                                       |
-| `content`  | **text** body — for text files (`null` for folders/binary)  |
-| `data`     | **binary** body (BLOB) — for uploaded files like PNG        |
-| `mimeType` | MIME type, e.g. `image/png`, `text/plain`                   |
-| `size`     | byte size of the file body                                  |
-| `parentId` | parent folder id (`null` only for the root)                 |
+| Field      | Notes                                                      |
+| ---------- | ---------------------------------------------------------- |
+| `id`       | `cuid` (the root folder has the fixed id `root`)           |
+| `name`     | unique among siblings in the same folder                   |
+| `type`     | `"FILE"` or `"FOLDER"`                                     |
+| `content`  | **text** body — for text files (`null` for folders/binary) |
+| `data`     | **binary** body (BLOB) — for uploaded files like PNG       |
+| `mimeType` | MIME type, e.g. `image/png`, `text/plain`                  |
+| `size`     | byte size of the file body                                 |
+| `parentId` | parent folder id (`null` only for the root)                |
 
 A file is **text** (editable `content`) or **binary** (uploaded `data`, served as-is).
 API responses include `isBinary` and a `rawUrl`; the raw bytes are **never** embedded in
@@ -66,18 +66,18 @@ Base URL: `http://localhost:4000/api`. All responses are wrapped as `{ "data": .
 "Try it out" button. The raw OpenAPI 3 spec is at `http://localhost:4000/api/openapi.json`
 (hand this to the frontend; it can also generate a typed client from it).
 
-| Method   | Path                  | Description                                     |
-| -------- | --------------------- | ----------------------------------------------- |
-| `GET`    | `/health`             | Health check                                    |
-| `GET`    | `/tree`               | Whole tree as a nested structure                |
-| `GET`    | `/nodes/:id`          | One node + breadcrumb `path` + `children`       |
-| `GET`    | `/nodes/:id/raw`      | Stream raw file bytes/text (right `Content-Type`)|
-| `POST`   | `/nodes`              | Create a folder or a **text** file              |
-| `POST`   | `/nodes/upload`       | Upload a **binary** file (multipart)            |
-| `PATCH`  | `/nodes/:id`          | Rename and/or edit text-file content            |
-| `POST`   | `/nodes/:id/move`     | Move a node into another folder                 |
-| `DELETE` | `/nodes/:id`          | Delete a node (folders cascade)                 |
-| `GET`    | `/search?q=term`      | Search by name or text content                  |
+| Method   | Path              | Description                                       |
+| -------- | ----------------- | ------------------------------------------------- |
+| `GET`    | `/health`         | Health check                                      |
+| `GET`    | `/tree`           | Whole tree as a nested structure                  |
+| `GET`    | `/nodes/:id`      | One node + breadcrumb `path` + `children`         |
+| `GET`    | `/nodes/:id/raw`  | Stream raw file bytes/text (right `Content-Type`) |
+| `POST`   | `/nodes`          | Create a folder or a **text** file                |
+| `POST`   | `/nodes/upload`   | Upload a **binary** file (multipart)              |
+| `PATCH`  | `/nodes/:id`      | Rename and/or edit text-file content              |
+| `POST`   | `/nodes/:id/move` | Move a node into another folder                   |
+| `DELETE` | `/nodes/:id`      | Delete a node (folders cascade)                   |
+| `GET`    | `/search?q=term`  | Search by name or text content                    |
 
 ### Request bodies
 

@@ -1,13 +1,13 @@
-import type { Request, Response } from 'express';
-import * as service from '../services/node.service';
-import { AppError } from '../utils/AppError';
+import type { Request, Response } from "express";
+import * as service from "../services/node.service";
+import { AppError } from "../utils/AppError";
 import {
   createNodeSchema,
   updateNodeSchema,
   moveNodeSchema,
   searchSchema,
   uploadMetaSchema,
-} from '../validation/node.schema';
+} from "../validation/node.schema";
 
 export async function getTree(_req: Request, res: Response) {
   const tree = await service.getTree();
@@ -39,7 +39,10 @@ export async function moveNode(req: Request, res: Response) {
 
 export async function uploadNode(req: Request, res: Response) {
   if (!req.file) {
-    throw new AppError(400, 'No file uploaded — send it as multipart form field "file"');
+    throw new AppError(
+      400,
+      'No file uploaded — send it as multipart form field "file"',
+    );
   }
   const meta = uploadMetaSchema.parse({
     name: req.body?.name || undefined,
@@ -57,8 +60,11 @@ export async function uploadNode(req: Request, res: Response) {
 export async function getRaw(req: Request, res: Response) {
   const raw = await service.getRaw(String(req.params.id));
   res.type(raw.mimeType);
-  res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(raw.name)}"`);
-  res.send(raw.kind === 'binary' ? raw.buffer : raw.text);
+  res.setHeader(
+    "Content-Disposition",
+    `inline; filename="${encodeURIComponent(raw.name)}"`,
+  );
+  res.send(raw.kind === "binary" ? raw.buffer : raw.text);
 }
 
 export async function deleteNode(req: Request, res: Response) {
