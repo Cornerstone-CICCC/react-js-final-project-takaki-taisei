@@ -1,0 +1,33 @@
+// Pseudo file system schema.
+// A single self-referential `Node` table models both folders and files.
+// SQLite does not support Prisma enums, so `type` is a string: "FILE" | "FOLDER".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Node {
+  id       String  @id @default(cuid())
+  name     String
+  type     String // "FILE" | "FOLDER"
+  content  String? // text body — for text files (null for folders & binary files)
+  data     Bytes? // binary body — for uploaded files like PNG (null otherwise)
+  mimeType String? // MIME type, e.g. "image/png" or "text/plain"
+  size     Int? // byte size of the file body
+  parentId String? // null only for the single root folder
+
+  parent   Node?  @relation("NodeChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children Node[] @relation("NodeChildren")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // No two siblings may share a name inside the same folder.
+  @@unique([parentId, name])
+  @@index([parentId])
+}
