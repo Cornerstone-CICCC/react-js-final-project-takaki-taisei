@@ -1,0 +1,64 @@
+### Pseudo-FS API — request samples
+# VS Code の「REST Client」拡張を入れると各リクエストの上の「Send Request」で実行できます。
+# 拡張が無くても、フロントに渡す「エンドポイント / リクエスト形式の見本」として読めます。
+# 先に server を起動: `npm run dev`
+
+@base = http://localhost:4000/api
+
+### ヘルスチェック（起動確認）
+GET {{base}}/health
+
+### ツリー全体（ネスト構造）
+GET {{base}}/tree
+
+### ノード1件 + パンくず path + children（フォルダの場合）
+GET {{base}}/nodes/root
+
+### フォルダ作成
+POST {{base}}/nodes
+Content-Type: application/json
+
+{ "name": "Music", "type": "FOLDER", "parentId": "root" }
+
+### テキストファイル作成（parentId 省略時は root）
+POST {{base}}/nodes
+Content-Type: application/json
+
+{ "name": "hello.txt", "type": "FILE", "content": "hi there" }
+
+### リネーム / テキスト内容の編集（:id を実際のIDに置き換え）
+PATCH {{base}}/nodes/REPLACE_WITH_ID
+Content-Type: application/json
+
+{ "name": "renamed.txt", "content": "new body" }
+
+### 移動（別フォルダへ）
+POST {{base}}/nodes/REPLACE_WITH_ID/move
+Content-Type: application/json
+
+{ "parentId": "root" }
+
+### 検索（名前・テキスト内容）
+GET {{base}}/search?q=todo
+
+### バイナリアップロード（multipart, フィールド名は "file"）
+# 同じフォルダに ./sample.png を置いてから実行してください
+POST {{base}}/nodes/upload
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="parentId"
+
+root
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="sample.png"
+Content-Type: image/png
+
+< ./sample.png
+------WebKitFormBoundary--
+
+### 実体を取得（画像/PDF表示・ダウンロード）。<img src> や <iframe src> に使う
+GET {{base}}/nodes/REPLACE_WITH_ID/raw
+
+### 削除（フォルダは配下ごと cascade 削除）
+DELETE {{base}}/nodes/REPLACE_WITH_ID

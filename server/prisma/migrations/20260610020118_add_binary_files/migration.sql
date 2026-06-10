@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Node" ADD COLUMN "data" BLOB;
+ALTER TABLE "Node" ADD COLUMN "mimeType" TEXT;
+ALTER TABLE "Node" ADD COLUMN "size" INTEGER;
