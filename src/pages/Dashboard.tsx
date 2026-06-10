@@ -17,11 +17,18 @@ function Dashboard() {
     (file) => file.parentId === currentFolderId,
   );
 
-  const rootFolders = mockFolders.filter((f) => f.parentId === null);
+  function onFolderClick(id: string | null) {
+    setCurrentFolderId(id);
+  }
 
   return (
     <div>
-      <DashboardSideBar folders={rootFolders} />
+      <DashboardSideBar
+        folders={mockFolders}
+        onFolderClick={onFolderClick}
+        currentFolderId={currentFolderId}
+      />
+      <main></main>
     </div>
   );
 }
