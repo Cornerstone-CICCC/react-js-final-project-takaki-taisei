@@ -103,3 +103,7 @@ export async function uploadBinaryFile(
 
   return data.data;
 }
+
+export function getRawNodeUrl(id: string) {
+  return `${backendUrl}/nodes/${id}/raw`;
+}

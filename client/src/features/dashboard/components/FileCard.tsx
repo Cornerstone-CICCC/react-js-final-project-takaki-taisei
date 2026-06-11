@@ -12,8 +12,9 @@ import {
   Presentation,
   type LucideIcon,
 } from "lucide-react";
+import type { NodeItem } from "../types";
 
-type Props = { name: string; updatedAt: string; size: number | null };
+type Props = { file: NodeItem; onOpen: (file: NodeItem) => void };
 
 const typeIconMap: Record<string, LucideIcon> = {
   txt: FileText,
@@ -75,29 +76,32 @@ const typeIconMap: Record<string, LucideIcon> = {
   yml: FileCode,
 };
 
-function FileCard({ name, size }: Props) {
-  const extension = name.includes(".")
-    ? (name.split(".").pop()?.toLowerCase() ?? "")
+function FileCard({ file, onOpen }: Props) {
+  const extension = file.name.includes(".")
+    ? (file.name.split(".").pop()?.toLowerCase() ?? "")
     : "";
   const TypeIcon = typeIconMap[extension] ?? File;
 
   return (
-    <div className="group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full">
+    <button
+      onClick={() => onOpen(file)}
+      className="group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full"
+    >
       <div className="aspect-video bg-surface-container-low flex items-center justify-center relative">
         <TypeIcon className="size-10 text-error/50" aria-hidden="true" />
       </div>
       <div className="p-md">
         <h4 className="font-label-md text-label-md text-on-surface truncate">
-          {name}
+          {file.name}
         </h4>
         <div className="flex justify-between items-center mt-1">
-          <p className="text-label-sm text-outline">{size} KB</p>
+          <p className="text-label-sm text-outline">{file.size} KB</p>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
             2h ago
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

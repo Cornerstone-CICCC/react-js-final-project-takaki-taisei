@@ -24,6 +24,7 @@ import FileCard from "../features/dashboard/components/FileCard";
 import { ArrowDown, FolderPlus, Grid2x2, List, Upload } from "lucide-react";
 import BreadCrumbComponent from "../features/dashboard/components/BreadCrumbComponent";
 import { toast } from "sonner";
+import TextPreviewModal from "../features/dashboard/components/TextPreviewModal";
 
 function Dashboard() {
   const [currentFolderId, setCurrentFolderId] = useState<string>("root");
@@ -33,6 +34,9 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [tree, setTree] = useState<TreeNode | null>(null);
+  const [selectedFile, setSelectedFile] = useState<NodeItem | null>(null);
+
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
 
   // const [searchQuery, setSearchQuery] = useState<string>("");
   // const [sortOption, setSortOption] = useState<SortOption>("name-asc");
@@ -43,6 +47,15 @@ function Dashboard() {
 
   function onFolderClick(id: string) {
     setCurrentFolderId(id);
+  }
+
+  function onClose() {
+    setIsPreviewModalOpen(false);
+  }
+
+  function openModal(file: NodeItem) {
+    setIsPreviewModalOpen(true);
+    setSelectedFile(file);
   }
 
   // Fetch nodes everytime currentId changes
@@ -154,15 +167,24 @@ function Dashboard() {
             </h3>
           </div>
           {/* Folder cards render here */}
-          {allFolders.map((folder) => (
-            <FolderCard
-              key={folder.id}
-              name={folder.name}
-              size={folder.size}
-              setCurrentFolderId={setCurrentFolderId}
-              id={folder.id}
-            />
-          ))}
+          {allFolders.length !== 0 ? (
+            allFolders.map((folder) => (
+              <FolderCard
+                folder={folder}
+                key={folder.id}
+                name={folder.name}
+                size={folder.size}
+                setCurrentFolderId={setCurrentFolderId}
+                id={folder.id}
+              />
+            ))
+          ) : (
+            <div>
+              <p className="text-center text-lg text-gray-600/50">
+                No folder to display
+              </p>
+            </div>
+          )}
 
           <div className="col-span-full mt-xl mb-2">
             <h3 className="text-label-md font-label-md text-outline uppercase tracking-wider">
@@ -170,58 +192,26 @@ function Dashboard() {
             </h3>
           </div>
           {/* File Card renders here */}
-          {allFiles.map((file) => (
-            <FileCard
-              key={file.id}
-              name={file.name}
-              size={file.size}
-              updatedAt={file.updatedAt}
-            />
-          ))}
-          <div className="group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full">
-            <div className="aspect-video bg-surface-container-low flex items-center justify-center">
-              <span
-                className="material-symbols-outlined text-4xl text-outline"
-                data-icon="article"
-              >
-                article
-              </span>
+          {allFiles.length !== 0 ? (
+            allFiles.map((file) => (
+              <FileCard key={file.id} file={file} onOpen={openModal} />
+            ))
+          ) : (
+            <div>
+              <p className="text-center text-lg text-gray-600/50">
+                No File to display
+              </p>
             </div>
-            <div className="p-md">
-              <h4 className="font-label-md text-label-md text-on-surface truncate">
-                requirements.txt
-              </h4>
-              <div className="flex justify-between items-center mt-1">
-                <p className="text-label-sm text-outline">12 KB</p>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
-                  1w ago
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full">
-            <div className="aspect-video bg-surface-container flex items-center justify-center">
-              <span
-                className="material-symbols-outlined text-4xl text-primary/40"
-                data-icon="description"
-              >
-                description
-              </span>
-            </div>
-            <div className="p-md">
-              <h4 className="font-label-md text-label-md text-on-surface truncate">
-                final-report.docx
-              </h4>
-              <div className="flex justify-between items-center mt-1">
-                <p className="text-label-sm text-outline">2.4 MB</p>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
-                  2w ago
-                </span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </main>
+      {isPreviewModalOpen && (
+        <TextPreviewModal
+          onClose={onClose}
+          file={selectedFile}
+          breadCrumbs={breadCrumbs}
+        />
+      )}
     </div>
   );
 }

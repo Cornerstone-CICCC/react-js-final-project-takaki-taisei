@@ -19,7 +19,10 @@ function DashboardSideBarItem({
 }: Props) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const hasChildren = folder.children && folder.children.length > 0;
+  const hasChildren =
+    folder.children &&
+    folder.children.length > 0 &&
+    folder.children.some((child) => child.type === "FOLDER");
   const isActive = currentFolderId === folder.id;
 
   return (

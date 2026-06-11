@@ -23,14 +23,17 @@ function DashboardSideBar({ folder, onFolderClick, currentFolderId }: Props) {
         <HardDrive />
         My Drive
       </button>
-      {folder?.children.map((f) => (
-        <DashboardSideBarItem
-          folder={f}
-          currentFolderId={currentFolderId}
-          onFolderClick={onFolderClick}
-          depth={0}
-        />
-      ))}
+      {folder?.children.map(
+        (f) =>
+          f.type === "FOLDER" && (
+            <DashboardSideBarItem
+              folder={f}
+              currentFolderId={currentFolderId}
+              onFolderClick={onFolderClick}
+              depth={0}
+            />
+          ),
+      )}
     </aside>
   );
 }

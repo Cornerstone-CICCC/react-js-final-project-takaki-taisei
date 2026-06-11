@@ -1,13 +1,15 @@
 import { EllipsisVertical, Folder } from "lucide-react";
+import type { NodeItem } from "../types";
 
 type Props = {
+  folder: NodeItem;
   id: string;
   name: string;
   size: number | null;
   setCurrentFolderId: (id: string) => void;
 };
 
-function FolderCard({ id, name, size, setCurrentFolderId }: Props) {
+function FolderCard({ id, name, size, setCurrentFolderId, folder }: Props) {
   return (
     <button
       onClick={() => setCurrentFolderId(id)}
@@ -22,7 +24,9 @@ function FolderCard({ id, name, size, setCurrentFolderId }: Props) {
       <h4 className="font-label-md text-label-md text-on-surface truncate">
         {name}
       </h4>
-      <p className="text-label-sm text-outline">• {size}</p>
+      {folder.size && (
+        <p className="text-label-sm text-outline">{folder.size}mb </p>
+      )}
     </button>
   );
 }
