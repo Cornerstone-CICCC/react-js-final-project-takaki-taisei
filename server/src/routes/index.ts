@@ -1,6 +1,7 @@
 import { Router } from "express";
 import swaggerUi from "swagger-ui-express";
 import nodeRoutes from "./node.routes";
+import authRoutes from "./auth.routes";
 import { openapiSpec } from "../docs/openapi";
 
 const router = Router();
@@ -20,5 +21,6 @@ router.use(
 );
 
 router.use("/", nodeRoutes);
+router.use("/auth", authRoutes);
 
 export default router;

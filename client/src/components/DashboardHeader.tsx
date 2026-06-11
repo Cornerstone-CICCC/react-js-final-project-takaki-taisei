@@ -1,0 +1,41 @@
+import { Bell, Folder } from "lucide-react";
+
+function DashboardHeader() {
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center w-full px-margin-desktop py-md bg-surface-container-lowest shadow-sm h-16">
+      <div className="flex items-center gap-2 text-headline-md font-headline-md font-bold text-on-surface">
+        <Folder className="material-symbols-outlined text-primary" />
+        VaultBox
+      </div>
+      <div className="flex-1 max-w-xl mx-xl hidden md:block">
+        <div className="relative group">
+          <span
+            className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline"
+            data-icon="search"
+          >
+            search
+          </span>
+          <input
+            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-body-md transition-all"
+            placeholder="Search files, folders, documents..."
+            type="text"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-md">
+        <button className="p-2 rounded-full hover:bg-surface-container transition-colors">
+          <Bell className="material-symbols-outlined text-on-surface-variant" />
+        </button>
+        <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-outline-variant">
+          <img
+            alt="User Profile Avatar"
+            className="w-full h-full object-cover"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwPcSjjUMiaNObWUH5t8ZvvIAf4zS4rbzQ85hsnWWejlQFh3I8CqRJFbfo-aRsXvC3_cVLbHoRj2kYZcHI67D0kW1igWFDyQSZsWPdoOVny-98OB9gW5EL3CFEewmk9XrahkEUB_dw26EZRCZrUKTA5extsppgNyhIvEjTlpt9c5XrFhz0Dp5e-KJj2UTegiaBSI9cZRGkzt2Oh3kighMnO8KHzlXd3O2Q2Di6fGmNNj0SdzVfrLDYELks-FU2zSYqoWrU-R4Fdk0"
+          />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export default DashboardHeader;

@@ -1,28 +1,31 @@
-import type { FolderItem } from "../types";
+import { HardDrive } from "lucide-react";
+import type { TreeNode } from "../types";
 import DashboardSideBarItem from "./DashboardSideBarItem";
 
 type Props = {
-  folders: FolderItem[];
+  folder: TreeNode | null;
   currentFolderId: string | null;
-  onFolderClick: (id: string | null) => void;
+  onFolderClick: (id: string) => void;
 };
 
-function DashboardSideBar({ folders, onFolderClick, currentFolderId }: Props) {
-  const rootFolders = folders.filter((f) => f.parentId === null);
-
+function DashboardSideBar({ folder, onFolderClick, currentFolderId }: Props) {
   return (
-    <aside className="w-64 border-r border-slate-200 bg-white p-4">
+    <aside className="hidden lg:flex flex-col gap-sm p-md w-[280px] h-full bg-surface border-r border-outline-variant fixed left-0 top-16">
       <div className="mb-6">
         <p className="text-lg font-semibold text-slate-900">VaultBox</p>
         <p className="text-sm text-slate-500">Your secure drive</p>
       </div>
-      <button type="button" onClick={() => onFolderClick(null)}>
+      <button
+        type="button"
+        onClick={() => onFolderClick("root")}
+        className="flex items-center gap-md bg-primary-container text-on-primary-container rounded-lg px-md py-sm transition-all"
+      >
+        <HardDrive />
         My Drive
       </button>
-      {rootFolders.map((f) => (
+      {folder?.children.map((f) => (
         <DashboardSideBarItem
           folder={f}
-          folders={folders}
           currentFolderId={currentFolderId}
           onFolderClick={onFolderClick}
           depth={0}

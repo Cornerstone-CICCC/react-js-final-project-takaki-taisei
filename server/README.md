@@ -9,6 +9,8 @@ following an MVC structure (routes → controllers → services).
 - **Express 5** (TypeScript)
 - **Prisma ORM** + **SQLite** (zero-setup file database)
 - **Zod** for request validation
+- **JWT** authentication in HTTP-only cookies
+- **bcryptjs** for password hashing
 - **tsx** for the dev runtime
 
 ## Getting started
@@ -78,6 +80,61 @@ Base URL: `http://localhost:4000/api`. All responses are wrapped as `{ "data": .
 | `POST`   | `/nodes/:id/move` | Move a node into another folder                   |
 | `DELETE` | `/nodes/:id`      | Delete a node (folders cascade)                   |
 | `GET`    | `/search?q=term`  | Search by name or text content                    |
+
+### Authentication
+
+Authentication uses a signed JWT stored in an HTTP-only cookie named `auth_token`.
+Passwords are hashed before storage and are never returned by the API. The `/me` route
+uses authentication middleware to verify the cookie.
+
+Add these values to `.env`:
+
+```env
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:5173
+```
+
+The frontend must send requests with credentials enabled. For example:
+
+```ts
+fetch("http://localhost:4000/api/auth/me", { credentials: "include" });
+```
+
+| Method | Path           | Description                               |
+| ------ | -------------- | ----------------------------------------- |
+| `POST` | `/auth/signup` | Create an account and set the auth cookie |
+| `POST` | `/auth/login`  | Log in and set the auth cookie            |
+| `POST` | `/auth/logout` | Clear the auth cookie                     |
+| `GET`  | `/auth/me`     | Return the authenticated user             |
+
+Signup body:
+
+```json
+{
+  "username": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+Login body:
+
+```json
+{ "email": "john@example.com", "password": "password123" }
+```
+
+Successful signup, login, and `/me` responses contain only the public user fields:
+
+```json
+{
+  "data": {
+    "id": "user-id",
+    "username": "John Doe",
+    "email": "john@example.com"
+  }
+}
+```
 
 ### Request bodies
 
