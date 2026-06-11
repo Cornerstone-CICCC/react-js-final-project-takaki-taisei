@@ -10,7 +10,7 @@ type Props = {
 
 function DashboardSideBar({ folder, onFolderClick, currentFolderId }: Props) {
   return (
-    <aside className="hidden lg:flex flex-col gap-sm p-md w-[280px] h-full bg-surface border-r border-outline-variant fixed left-0 top-16">
+    <aside className="hidden lg:flex flex-col gap-sm p-md w-70 h-full bg-surface border-r border-outline-variant fixed left-0 top-16">
       <div className="mb-6">
         <p className="text-lg font-semibold text-slate-900">VaultBox</p>
         <p className="text-sm text-slate-500">Your secure drive</p>

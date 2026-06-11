@@ -9,7 +9,7 @@ type Props = {
   setCurrentFolderId: (id: string) => void;
 };
 
-function FolderCard({ id, name, size, setCurrentFolderId, folder }: Props) {
+function FolderCard({ id, name, setCurrentFolderId, folder }: Props) {
   return (
     <button
       onClick={() => setCurrentFolderId(id)}

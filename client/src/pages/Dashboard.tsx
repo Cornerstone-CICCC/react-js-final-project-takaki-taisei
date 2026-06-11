@@ -10,7 +10,7 @@ import {
   type TreeNode,
   type BreadCrumb,
   type NodeItem,
-  type SortOption,
+  // type SortOption,
   type ViewMode,
 } from "../features/dashboard/types";
 
@@ -25,6 +25,7 @@ import { ArrowDown, FolderPlus, Grid2x2, List, Upload } from "lucide-react";
 import BreadCrumbComponent from "../features/dashboard/components/BreadCrumbComponent";
 import { toast } from "sonner";
 import TextPreviewModal from "../features/dashboard/components/TextPreviewModal";
+import CreateFolderModal from "../features/dashboard/components/CreateFolderModal";
 
 function Dashboard() {
   const [currentFolderId, setCurrentFolderId] = useState<string>("root");
@@ -37,6 +38,8 @@ function Dashboard() {
   const [selectedFile, setSelectedFile] = useState<NodeItem | null>(null);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
+  const [isFolderCreateModalOpen, setIsFollderCreateModalOpen] =
+    useState<boolean>(false);
 
   // const [searchQuery, setSearchQuery] = useState<string>("");
   // const [sortOption, setSortOption] = useState<SortOption>("name-asc");
@@ -58,6 +61,18 @@ function Dashboard() {
     setSelectedFile(file);
   }
 
+  function closeFolderModal() {
+    setIsFollderCreateModalOpen(false);
+  }
+
+  async function handleFolderCreated() {
+    const node = await getNode(currentFolderId);
+    const tree = await getTree();
+
+    setChildren(node.children ?? []);
+    setTree(tree);
+  }
+
   // Fetch nodes everytime currentId changes
   useEffect(() => {
     async function getNodes() {
@@ -65,7 +80,7 @@ function Dashboard() {
         setIsLoading(true);
         const node = await getNode(currentFolderId);
 
-        node.children && setChildren(node.children);
+        setChildren(node.children ?? []);
         setBreadCrumbs(node.path);
         setCurrentFolderName(node.name);
         console.log(breadCrumbs);
@@ -105,7 +120,7 @@ function Dashboard() {
         onFolderClick={onFolderClick}
         currentFolderId={currentFolderId}
       />
-      <main className="flex-1 ml-0 lg:ml-[280px] overflow-y-auto bg-background p-margin-desktop">
+      <main className="flex-1 ml-0 lg:ml-70 overflow-y-auto bg-background p-margin-desktop">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
           {/* bread crumbs */}
           <div>
@@ -121,7 +136,11 @@ function Dashboard() {
             <p className="text-body-md text-on-surface-variant">12 items</p>
           </div>
           <div className="flex items-center gap-sm">
-            <button className="flex items-center gap-2 px-lg py-sm bg-surface-container text-primary font-label-md rounded-xl hover:bg-surface-container-high transition-all active:scale-95">
+            <button
+              className="flex items-center gap-2 px-lg py-sm bg-surface-container text-primary font-label-md rounded-xl hover:bg-surface-container-high transition-all active:scale-95"
+              type="button"
+              onClick={() => setIsFollderCreateModalOpen(true)}
+            >
               <FolderPlus className="material-symbols-outlined" />
               New Folder
             </button>
@@ -210,6 +229,15 @@ function Dashboard() {
           onClose={onClose}
           file={selectedFile}
           breadCrumbs={breadCrumbs}
+        />
+      )}
+
+      {isFolderCreateModalOpen && (
+        <CreateFolderModal
+          currentFolderId={currentFolderId}
+          handleClose={closeFolderModal}
+          onFolderCreated={handleFolderCreated}
+          currentFolderName={currentFolderName}
         />
       )}
     </div>

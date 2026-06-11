@@ -124,7 +124,7 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 preview-backdrop backdrop-blur-lg bg-black/40"
       onClick={() => onClose()}
     >
-      <div className="bg-white w-full max-w-6xl h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] max-h-[819px] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-outline-variant animate-in fade-in zoom-in duration-300">
+      <div className="bg-white w-full max-w-6xl h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] max-h-204.75 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-outline-variant animate-in fade-in zoom-in duration-300">
         <div className="shrink-0 px-lg py-md border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
           <div className="flex items-center gap-md">
             <div className="p-2 bg-primary-container/10 rounded-lg">
