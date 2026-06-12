@@ -63,20 +63,23 @@ function DashboardSideBarItem({
           }`}
         >
           {folder.type === "FOLDER" ? <Folder size={16} /> : <File size={16} />}
-          <span className="truncate">{folder.name}</span>
+          <span className="truncate w-40">{folder.name}</span>
         </button>
       </div>
 
       {isOpen &&
         hasChildren &&
-        folder.children.map((folder) => (
-          <DashboardSideBarItem
-            folder={folder}
-            onFolderClick={onFolderClick}
-            depth={depth + 1}
-            currentFolderId={currentFolderId}
-          />
-        ))}
+        folder.children
+          .filter((f) => f.type === "FOLDER")
+          .map((folder) => (
+            <DashboardSideBarItem
+              key={folder.id}
+              folder={folder}
+              onFolderClick={onFolderClick}
+              depth={depth + 1}
+              currentFolderId={currentFolderId}
+            />
+          ))}
     </div>
   );
 }

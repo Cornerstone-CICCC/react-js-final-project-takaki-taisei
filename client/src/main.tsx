@@ -9,7 +9,19 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <App />
-      <Toaster />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          classNames: {
+            toast: "app-toast",
+            title: "app-toast-title",
+            description: "app-toast-description",
+            actionButton: "app-toast-action",
+            cancelButton: "app-toast-cancel",
+            closeButton: "app-toast-close",
+          },
+        }}
+      />
     </BrowserRouter>
   </StrictMode>,
 );

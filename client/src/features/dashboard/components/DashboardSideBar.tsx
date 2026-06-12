@@ -27,6 +27,7 @@ function DashboardSideBar({ folder, onFolderClick, currentFolderId }: Props) {
         (f) =>
           f.type === "FOLDER" && (
             <DashboardSideBarItem
+              key={f.id}
               folder={f}
               currentFolderId={currentFolderId}
               onFolderClick={onFolderClick}

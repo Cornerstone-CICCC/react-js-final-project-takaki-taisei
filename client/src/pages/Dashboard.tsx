@@ -15,7 +15,11 @@ import {
 } from "../features/dashboard/types";
 
 import DashboardSideBar from "../features/dashboard/components/DashboardSideBar";
-import { getNode, getTree } from "../api/contents/contents.api";
+import {
+  getNode,
+  getTree,
+  uploadBinaryFile,
+} from "../api/contents/contents.api";
 import Spinner from "../components/Spinner";
 
 import FolderCard from "../features/dashboard/components/FolderCard";
@@ -26,6 +30,9 @@ import BreadCrumbComponent from "../features/dashboard/components/BreadCrumbComp
 import { toast } from "sonner";
 import TextPreviewModal from "../features/dashboard/components/TextPreviewModal";
 import CreateFolderModal from "../features/dashboard/components/CreateFolderModal";
+import FileUploadModal from "../features/dashboard/components/FileUploadModal";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 function Dashboard() {
   const [currentFolderId, setCurrentFolderId] = useState<string>("root");
@@ -33,6 +40,10 @@ function Dashboard() {
   const [children, setChildren] = useState<NodeItem[]>([]);
   const [breadCrumbs, setBreadCrumbs] = useState<BreadCrumb[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
+  const [uploadError, setUplodError] = useState<string | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
 
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [selectedFile, setSelectedFile] = useState<NodeItem | null>(null);
@@ -65,33 +76,62 @@ function Dashboard() {
     setIsFollderCreateModalOpen(false);
   }
 
-  async function handleFolderCreated() {
+  async function loadCurrentNode() {
     const node = await getNode(currentFolderId);
     const tree = await getTree();
 
     setChildren(node.children ?? []);
+    setBreadCrumbs(node.path);
+    setCurrentFolderName(node.name);
     setTree(tree);
+  }
+
+  async function uploadFile(file: File) {
+    if (file.size > MAX_FILE_SIZE) {
+      setUplodError("File must be smaller than 10mb");
+      toast.error("File must be smaller thant 10mb");
+      return;
+    }
+    try {
+      setIsFileUploading(true);
+      setUplodError(null);
+      await uploadBinaryFile(file, currentFolderId);
+      await loadCurrentNode();
+      toast.success("Successfully uploaded file");
+      setIsUploadModalOpen(false);
+    } catch (e) {
+      setUplodError(e instanceof Error ? e.message : "Failed to upload file");
+      toast.error("Failed to upload file");
+    } finally {
+      setIsFileUploading(false);
+    }
   }
 
   // Fetch nodes everytime currentId changes
   useEffect(() => {
+    const controller = new AbortController();
+
     async function getNodes() {
       try {
         setIsLoading(true);
-        const node = await getNode(currentFolderId);
+        const node = await getNode(currentFolderId, controller.signal);
 
         setChildren(node.children ?? []);
         setBreadCrumbs(node.path);
         setCurrentFolderName(node.name);
-        console.log(breadCrumbs);
-      } catch (e) {
+      } catch {
+        if (controller.signal.aborted) return;
         toast.error("Failed to fetch nodes");
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     }
 
     getNodes();
+
+    return () => controller.abort();
   }, [currentFolderId]);
 
   // fetch tree onec on load
@@ -144,7 +184,13 @@ function Dashboard() {
               <FolderPlus className="material-symbols-outlined" />
               New Folder
             </button>
-            <button className="flex items-center gap-2 px-lg py-sm bg-primary text-on-primary font-label-md rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95">
+            <button
+              className="flex items-center gap-2 px-lg py-sm bg-primary text-on-primary font-label-md rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95"
+              onClick={() => {
+                setUplodError(null);
+                setIsUploadModalOpen(true);
+              }}
+            >
               <Upload className="material-symbols-outlined" />
               Upload
             </button>
@@ -236,8 +282,17 @@ function Dashboard() {
         <CreateFolderModal
           currentFolderId={currentFolderId}
           handleClose={closeFolderModal}
-          onFolderCreated={handleFolderCreated}
+          onFolderCreated={loadCurrentNode}
           currentFolderName={currentFolderName}
+        />
+      )}
+
+      {isUploadModalOpen && (
+        <FileUploadModal
+          onUpload={uploadFile}
+          closeModal={() => setIsUploadModalOpen(false)}
+          isUploading={isFileUploading}
+          processError={uploadError}
         />
       )}
     </div>

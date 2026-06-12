@@ -1,4 +1,14 @@
-import { CircleX, Download, ExternalLink, Share } from "lucide-react";
+import {
+  CircleX,
+  Download,
+  ExternalLink,
+  FileAudio,
+  FileQuestion,
+  FileText,
+  FileVideo,
+  Image,
+  type LucideIcon,
+} from "lucide-react";
 import type { BreadCrumb, NodeItem } from "../types";
 import { getRawNodeUrl } from "../../../api/contents/contents.api";
 
@@ -108,6 +118,65 @@ const extentionTypeMap: Record<string, string> = {
   toml: "TOML",
 };
 
+const textExtensions = new Set([
+  "txt",
+  "md",
+  "rtf",
+  "csv",
+  "json",
+  "xml",
+  "yaml",
+  "yml",
+  "html",
+  "htm",
+  "css",
+  "scss",
+  "sass",
+  "less",
+  "js",
+  "jsx",
+  "ts",
+  "tsx",
+  "py",
+  "java",
+  "c",
+  "h",
+  "cpp",
+  "cc",
+  "cxx",
+  "hpp",
+  "cs",
+  "go",
+  "rs",
+  "php",
+  "rb",
+  "swift",
+  "kt",
+  "kts",
+  "sh",
+  "bash",
+  "zsh",
+  "sql",
+  "env",
+  "gitignore",
+  "log",
+  "ini",
+  "conf",
+  "toml",
+]);
+
+function formatFileSize(bytes: number | null) {
+  if (bytes == null) return "Unknown size";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleString();
+}
+
 function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
   function generateViewBreadCrumb() {
     const breadCrumNames = breadCrumbs.map((bc) => bc.name);
@@ -117,23 +186,39 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
   const extension = file?.name.includes(".")
     ? (file.name.split(".").pop()?.toLowerCase() ?? "")
     : "";
-  const fileType = extentionTypeMap[extension] ?? "Text File";
+
+  const fileType =
+    extentionTypeMap[extension] ?? file?.mimeType ?? "Unknown file";
+  const rawUrl = file ? getRawNodeUrl(file.id) : "";
+
+  const isImage = file?.mimeType?.startsWith("image/") ?? false;
+  const isVideo = file?.mimeType?.startsWith("video/") ?? false;
+  const isAudio = file?.mimeType?.startsWith("audio/") ?? false;
+  const isPdf = file?.mimeType === "application/pdf" || extension === "pdf";
+  const isText =
+    file?.mimeType?.startsWith("text/") ||
+    textExtensions.has(extension) ||
+    file?.content != null;
+
+  let PreviewIcon: LucideIcon = FileQuestion;
+  if (isImage) PreviewIcon = Image;
+  if (isVideo) PreviewIcon = FileVideo;
+  if (isAudio) PreviewIcon = FileAudio;
+  if (isPdf || isText) PreviewIcon = FileText;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 preview-backdrop backdrop-blur-lg bg-black/40"
       onClick={() => onClose()}
     >
-      <div className="bg-white w-full max-w-6xl h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] max-h-204.75 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-outline-variant animate-in fade-in zoom-in duration-300">
+      <div
+        className="bg-white w-full max-w-6xl h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] max-h-204.75 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-outline-variant animate-in fade-in zoom-in duration-300"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="shrink-0 px-lg py-md border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
           <div className="flex items-center gap-md">
             <div className="p-2 bg-primary-container/10 rounded-lg">
-              <span
-                className="material-symbols-outlined text-primary"
-                data-icon="movie"
-              >
-                movie
-              </span>
+              <PreviewIcon className="text-primary" aria-hidden="true" />
             </div>
             <div>
               <h2 className="text-headline-md font-headline-md">
@@ -142,30 +227,32 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-sm">
-            <a
-              href={getRawNodeUrl(file?.id || "")}
-              download
-              className="flex items-center gap-2 px-md py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md hover:opacity-90 transition-all active:scale-95"
-            >
-              <Download className="material-symbols-outlined text-[18px]" />
-              Download
-            </a>
-            <a
-              href={getRawNodeUrl(file?.id || "root")}
-              target="_blank"
-              className="flex items-center gap-2 px-md py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md hover:opacity-90 transition-all active:scale-95"
-            >
-              <ExternalLink className="material-symbols-outlined text-[18px]" />
-              Open
-            </a>
-            <button className="flex items-center gap-2 px-md py-2 bg-secondary-container text-on-secondary-container rounded-full text-label-md font-label-md hover:bg-surface-container-highest transition-all active:scale-95">
-              <Share className="material-symbols-outlined text-[18px]" />
-              Share
-            </button>
+            {file && (
+              <>
+                <a
+                  href={rawUrl}
+                  download
+                  className="flex items-center gap-2 px-md py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md hover:opacity-90 transition-all active:scale-95"
+                >
+                  <Download className="material-symbols-outlined text-[18px]" />
+                  Download
+                </a>
+                <a
+                  href={rawUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 px-md py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md hover:opacity-90 transition-all active:scale-95"
+                >
+                  <ExternalLink className="material-symbols-outlined text-[18px]" />
+                  Open
+                </a>
+              </>
+            )}
             <div className="w-px h-8 bg-outline-variant mx-2"></div>
             <button
               className="p-2 hover:bg-surface-container rounded-full transition-colors"
               type="button"
+              aria-label="Close preview"
               onClick={() => onClose()}
             >
               <CircleX className="material-symbols-outlined text-on-surface-variant" />
@@ -173,78 +260,66 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
           </div>
         </div>
         <div className="min-h-0 flex-1 flex overflow-hidden">
-          {fileType.includes("Video") && (
-            <div className="min-w-0 flex-1 bg-black flex items-center justify-center relative group">
+          <div className="min-w-0 flex-1 bg-surface-container-low flex items-center justify-center overflow-auto p-lg">
+            {file && isImage && (
               <img
-                className="w-full h-full object-contain"
-                data-alt="A wide, crisp, high-definition preview of a video project. The image shows several students sitting around a table in a modern office or university setting, laughing and collaborating. Sunlight streams through large windows, highlighting the clean and organized space. The overall mood is productive, creative, and professional, reflecting the VaultBox aesthetic."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuASu9JjMms94HkUqI1242c6IbFm1ksevhLgkdtHgAkOkC6THZ6qkYlKD4_1BoYLAWTDwa3C16IOEEiBTbQ3UZwg_xLYe9i0sps0ZMJ4SgZc7fqEYEm7oAxj1HuxN4v93eaNxvjrXv4n9KLPgtOL9ydz19sd_zBCX29sU_Ifk3Bt2-rH_A07BXBazJPrS3nsoyktpdg-mDp5mzzBIGJqab8x6CcZP-PBva92yLI-nHZjCPkN09Xdcue-CU5Gtwrc3NraIjFp0uvvWUQ"
+                alt={file.name}
+                className="max-h-full max-w-full object-contain rounded-lg"
+                src={rawUrl}
               />
-              <div className="absolute bottom-0 left-0 right-0 p-lg bg-linear-to-t from-black/80 to-transparent flex flex-col gap-md opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-full bg-white/20 rounded-full h-1 relative overflow-hidden">
-                  <div
-                    className="absolute top-0 left-0 h-full bg-primary"
-                    style={{ width: "35%" }}
-                  ></div>
-                </div>
-                <div className="flex items-center justify-between text-white">
-                  <div className="flex items-center gap-lg">
-                    <span
-                      className="material-symbols-outlined cursor-pointer"
-                      data-icon="play_arrow"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      play_arrow
-                    </span>
-                    <span
-                      className="material-symbols-outlined cursor-pointer"
-                      data-icon="skip_next"
-                      // style="font-variation-settings: 'FILL' 1;"
-                    >
-                      skip_next
-                    </span>
-                    <span
-                      className="material-symbols-outlined cursor-pointer"
-                      data-icon="volume_up"
-                      // style="font-variation-settings: 'FILL' 1;"
-                    >
-                      volume_up
-                    </span>
-                    <span className="text-label-md">01:42 / 04:55</span>
-                  </div>
-                  <div className="flex items-center gap-lg">
-                    <span
-                      className="material-symbols-outlined cursor-pointer"
-                      data-icon="settings"
-                    >
-                      settings
-                    </span>
-                    <span
-                      className="material-symbols-outlined cursor-pointer"
-                      data-icon="fullscreen"
-                    >
-                      fullscreen
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-primary/90 text-on-primary rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform">
-                <span
-                  className="material-symbols-outlined text-4xl"
-                  data-icon="play_arrow"
-                  // style="font-variation-settings: 'FILL' 1;"
-                >
-                  play_arrow
-                </span>
-              </button>
-            </div>
-          )}
+            )}
 
-          {fileType === "Plain Text" && (
-            <div className="min-w-0 flex-1 bg-white flex flex-col items-center justify-center relative group">
-              <p className="text-body-md font-bold">{file?.content}</p>
-            </div>
-          )}
+            {file && isVideo && (
+              <video
+                className="max-h-full max-w-full rounded-lg bg-black"
+                controls
+                src={rawUrl}
+              >
+                Your browser does not support video playback.
+              </video>
+            )}
+
+            {file && isAudio && (
+              <div className="w-full max-w-xl rounded-2xl bg-surface-container-lowest p-xl shadow-sm">
+                <FileAudio
+                  className="mx-auto mb-lg size-16 text-primary"
+                  aria-hidden="true"
+                />
+                <audio className="w-full" controls src={rawUrl}>
+                  Your browser does not support audio playback.
+                </audio>
+              </div>
+            )}
+
+            {file && isPdf && (
+              <iframe
+                className="h-full w-full rounded-lg bg-white"
+                src={rawUrl}
+                title={`Preview of ${file.name}`}
+              />
+            )}
+
+            {file && isText && !isPdf && (
+              <pre className="h-full w-full overflow-auto whitespace-pre-wrap rounded-lg bg-surface-container-lowest p-lg font-mono text-sm text-on-surface">
+                {file.content ?? "No text preview is available for this file."}
+              </pre>
+            )}
+
+            {file && !isImage && !isVideo && !isAudio && !isPdf && !isText && (
+              <div className="max-w-md text-center">
+                <FileQuestion
+                  className="mx-auto mb-md size-16 text-outline"
+                  aria-hidden="true"
+                />
+                <h3 className="text-headline-md font-headline-md text-on-surface">
+                  Preview unavailable
+                </h3>
+                <p className="mt-sm text-body-md text-on-surface-variant">
+                  Open or download this file to view its contents.
+                </p>
+              </div>
+            )}
+          </div>
 
           <aside className="w-80 overflow-y-auto bg-surface-container-lowest border-l border-outline-variant p-lg flex flex-col gap-xl">
             <div>
@@ -255,22 +330,24 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
                 <div className="flex flex-col gap-xs">
                   <label className="text-label-sm text-outline">Type</label>
                   <div className="flex items-center gap-2">
-                    <span
-                      className="material-symbols-outlined text-[18px] text-primary"
-                      data-icon="movie"
-                    >
-                      movie
-                    </span>
+                    <PreviewIcon
+                      className="size-5 text-primary"
+                      aria-hidden="true"
+                    />
                     <p className="text-body-md font-medium">{fileType}</p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-xs">
                   <label className="text-label-sm text-outline">Size</label>
-                  <p className="text-body-md font-medium">{file?.size} MB</p>
+                  <p className="text-body-md font-medium">
+                    {formatFileSize(file?.size ?? null)}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-xs">
                   <label className="text-label-sm text-outline">Uploaded</label>
-                  <p className="text-body-md font-medium">Yesterday, 2:45 PM</p>
+                  <p className="text-body-md font-medium">
+                    {file ? formatDate(file.createdAt) : "Unknown"}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-xs">
                   <label className="text-label-sm text-outline">Location</label>
@@ -278,49 +355,6 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
                     {generateViewBreadCrumb()}
                   </span>
                 </div>
-              </div>
-            </div>
-            <div className="mt-auto pt-lg border-t border-outline-variant">
-              <h3 className="text-label-md font-bold text-on-surface uppercase tracking-wider mb-md">
-                Quick Actions
-              </h3>
-              <div className="grid grid-cols-2 gap-sm">
-                <button className="flex flex-col items-center justify-center p-md bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors">
-                  <span
-                    className="material-symbols-outlined mb-1"
-                    data-icon="edit"
-                  >
-                    edit
-                  </span>
-                  <span className="text-label-sm">Rename</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-md bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors">
-                  <span
-                    className="material-symbols-outlined mb-1"
-                    data-icon="star"
-                  >
-                    star
-                  </span>
-                  <span className="text-label-sm">Favorite</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-md bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors text-error">
-                  <span
-                    className="material-symbols-outlined mb-1"
-                    data-icon="delete"
-                  >
-                    delete
-                  </span>
-                  <span className="text-label-sm">Delete</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-md bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors">
-                  <span
-                    className="material-symbols-outlined mb-1"
-                    data-icon="info"
-                  >
-                    info
-                  </span>
-                  <span className="text-label-sm">Activity</span>
-                </button>
               </div>
             </div>
           </aside>

@@ -93,6 +93,88 @@
   --text-label-sm--letter-spacing: 0.01em;
 }
 
+.app-toast[data-sonner-toast][data-styled="true"] {
+  min-height: 64px;
+  padding: 14px 16px;
+  gap: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-surface-container-lowest) 94%,
+    var(--color-primary-fixed)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 18%, var(--color-outline-variant));
+  border-radius: var(--radius-lg);
+  color: var(--color-on-surface);
+  box-shadow:
+    inset 4px 0 0 var(--color-primary-container),
+    0 12px 32px rgba(15, 23, 42, 0.14);
+  font-family: var(--font-sans);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"][data-type="success"] {
+  box-shadow:
+    inset 4px 0 0 var(--color-success),
+    0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"][data-type="warning"] {
+  box-shadow:
+    inset 4px 0 0 var(--color-warning),
+    0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"][data-type="error"] {
+  box-shadow:
+    inset 4px 0 0 var(--color-danger),
+    0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"] [data-icon] {
+  color: var(--color-primary);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"][data-type="success"] [data-icon] {
+  color: var(--color-success);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"][data-type="warning"] [data-icon] {
+  color: var(--color-warning);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"][data-type="error"] [data-icon] {
+  color: var(--color-danger);
+}
+
+.app-toast[data-sonner-toast][data-styled="true"] .app-toast-title {
+  color: var(--color-on-surface);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.app-toast[data-sonner-toast][data-styled="true"] .app-toast-description {
+  color: var(--color-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.app-toast[data-sonner-toast][data-styled="true"] .app-toast-action,
+.app-toast[data-sonner-toast][data-styled="true"] .app-toast-cancel {
+  border-radius: var(--radius-default) !important;
+  font-weight: 600 !important;
+}
+
+.app-toast[data-sonner-toast][data-styled="true"] .app-toast-action {
+  background: var(--color-primary-container) !important;
+  color: var(--color-on-primary-container) !important;
+}
+
+.app-toast[data-sonner-toast][data-styled="true"] .app-toast-cancel,
+.app-toast[data-sonner-toast][data-styled="true"] .app-toast-close {
+  background: var(--color-surface-container) !important;
+  border-color: var(--color-outline-variant) !important;
+  color: var(--color-on-surface-variant) !important;
+}
+
 @layer base {
   * {
     box-sizing: border-box;

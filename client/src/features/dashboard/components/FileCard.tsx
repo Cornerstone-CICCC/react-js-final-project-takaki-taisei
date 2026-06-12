@@ -16,6 +16,13 @@ import type { NodeItem } from "../types";
 
 type Props = { file: NodeItem; onOpen: (file: NodeItem) => void };
 
+function formatFileSize(bytes: number | null) {
+  if (bytes == null) return "Unknown size";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 const typeIconMap: Record<string, LucideIcon> = {
   txt: FileText,
   md: FileText,
@@ -95,7 +102,9 @@ function FileCard({ file, onOpen }: Props) {
           {file.name}
         </h4>
         <div className="flex justify-between items-center mt-1">
-          <p className="text-label-sm text-outline">{file.size} KB</p>
+          <p className="text-label-sm text-outline">
+            {formatFileSize(file.size)}
+          </p>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
             2h ago
           </span>

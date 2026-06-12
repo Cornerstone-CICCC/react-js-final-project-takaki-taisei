@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFolder } from "../../../api/contents/contents.api";
 import { toast } from "sonner";
 import type { NodeItem } from "../types";
+import { Info } from "lucide-react";
 
 type Props = {
   currentFolderId: string;
@@ -22,6 +23,12 @@ function CreateFolderModal({
   async function handleOnClick() {
     try {
       setIsSubmitting(true);
+      const trimmedName = folderName.trim();
+
+      if (!trimmedName) {
+        toast.error("Folder name is required.");
+        return;
+      }
       const newFolder = await createFolder(folderName.trim(), currentFolderId);
       onFolderCreated(newFolder);
       SetFolderName("");
@@ -70,9 +77,7 @@ function CreateFolderModal({
             />
           </div>
           <div className="flex items-center gap-sm p-sm bg-surface-container-low rounded-lg border border-outline-variant/30">
-            <span className="material-symbols-outlined text-on-surface-variant text-sm">
-              info
-            </span>
+            <Info className="material-symbols-outlined text-on-surface-variant text-sm" />
             <p className="font-label-sm text-label-sm text-on-surface-variant">
               Folder will be created in{" "}
               <span className="font-semibold truncate">
@@ -84,7 +89,7 @@ function CreateFolderModal({
         <div className="mt-xl flex flex-col gap-sm">
           <button
             className="w-full py-md bg-primary-container text-on-primary-container rounded-full font-label-md text-label-md font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !folderName.trim()}
             onClick={handleOnClick}
           >
             Create
@@ -92,7 +97,10 @@ function CreateFolderModal({
           <button
             className="w-full py-md bg-transparent text-primary font-label-md text-label-md font-semibold hover:bg-surface-container rounded-full transition-colors"
             type="button"
-            onClick={() => handleClose()}
+            onClick={() => {
+              if (isSubmitting) return;
+              handleClose();
+            }}
           >
             Cancel
           </button>

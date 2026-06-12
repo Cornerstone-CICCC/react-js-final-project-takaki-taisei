@@ -14,6 +14,7 @@ export async function request<T>(
   const res = await fetch(`${backendUrl}${path}`, {
     ...options,
     headers: { "Content-Type": "application/json", ...options?.headers },
+    credentials: "include",
   });
 
   const data = await res.json().catch(() => null);
@@ -29,8 +30,11 @@ export async function getTree(): Promise<TreeNode> {
   return data;
 }
 
-export async function getNode(id: string): Promise<GetNodeResponse> {
-  const data = request<GetNodeResponse>(`/nodes/${id}`);
+export async function getNode(
+  id: string,
+  signal?: AbortSignal,
+): Promise<GetNodeResponse> {
+  const data = request<GetNodeResponse>(`/nodes/${id}`, { signal });
   return data;
 }
 
@@ -98,7 +102,7 @@ export async function uploadBinaryFile(
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(data.error || data.message || "Failed to upload");
+    throw new Error(data?.error || data?.message || "Failed to upload");
   }
 
   return data.data;
