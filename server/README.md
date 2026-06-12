@@ -45,7 +45,7 @@ A single self-referential `Node` table models both folders and files:
 
 | Field      | Notes                                                      |
 | ---------- | ---------------------------------------------------------- |
-| `id`       | `cuid` (the root folder has the fixed id `root`)           |
+| `id`       | `cuid` (`root` is an API alias for the current user's root) |
 | `name`     | unique among siblings in the same folder                   |
 | `type`     | `"FILE"` or `"FOLDER"`                                     |
 | `content`  | **text** body — for text files (`null` for folders/binary) |

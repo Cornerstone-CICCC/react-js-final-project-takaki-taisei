@@ -44,6 +44,8 @@ function FileUploadModal({
   }
 
   function handleSubmit() {
+    if (isUploading) return;
+
     if (!selectedFile) {
       setUploadError("Select a file");
       return;
@@ -161,17 +163,20 @@ function FileUploadModal({
         </div>
         <div className="px-lg py-md border-t border-outline-variant flex justify-end gap-md">
           <button
-            className="px-lg py-sm font-label-md text-label-md text-primary hover:bg-surface-container-high rounded-full transition-all active:scale-95"
+            className="px-lg py-sm font-label-md text-label-md text-primary hover:bg-surface-container-high rounded-full transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => closeModal()}
+            disabled={isUploading}
+            type="button"
           >
             Cancel
           </button>
           <button
-            className={`px-lg py-sm font-label-md text-label-md ${selectedFile ? "bg-primary-container text-on-primary-container hover:shadow-md active:scale-95" : "bg-gray-400/40 text-gray-900/30 cursor-not-allowed"}  rounded-full shadow-sm  transition-all `}
+            className={`px-lg py-sm font-label-md text-label-md ${selectedFile && !isUploading ? "bg-primary-container text-on-primary-container hover:shadow-md active:scale-95" : "bg-gray-400/40 text-gray-900/30 cursor-not-allowed"}  rounded-full shadow-sm transition-all`}
             onClick={handleSubmit}
-            disabled={!selectedFile}
+            disabled={!selectedFile || isUploading}
+            type="button"
           >
-            Upload
+            {isUploading ? "Uploading..." : "Upload"}
           </button>
         </div>
       </div>

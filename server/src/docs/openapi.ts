@@ -21,6 +21,7 @@ export const openapiSpec = {
       'All JSON responses are wrapped as `{ "data": ... }`.',
   },
   servers: [{ url: 'http://localhost:4000/api', description: 'Local dev server' }],
+  security: [{ cookieAuth: [] }],
   tags: [
     { name: 'System', description: 'Health' },
     { name: 'Tree', description: 'Browse the file system' },
@@ -33,6 +34,7 @@ export const openapiSpec = {
       get: {
         tags: ['System'],
         summary: 'Health check',
+        security: [],
         responses: {
           200: {
             description: 'Server is up',
@@ -269,6 +271,13 @@ export const openapiSpec = {
   },
 
   components: {
+    securitySchemes: {
+      cookieAuth: {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'auth_token',
+      },
+    },
     schemas: {
       Node: {
         type: 'object',

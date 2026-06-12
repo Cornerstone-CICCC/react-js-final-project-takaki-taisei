@@ -3,5 +3,5 @@ export const NodeType = { FILE: "FILE", FOLDER: "FOLDER" } as const;
 
 export type NodeType = (typeof NodeType)[keyof typeof NodeType];
 
-// Fixed id of the single root folder (seeded once). Everything lives under it.
+// Public API alias resolved to the authenticated user's generated root folder id.
 export const ROOT_ID = "root";

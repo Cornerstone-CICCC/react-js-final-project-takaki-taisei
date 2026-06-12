@@ -1,10 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { AppError } from "../utils/AppError";
 import { NodeType, ROOT_ID } from "../types/node.types";
+import { AppError } from "../utils/AppError";
 
-// Columns returned for metadata/listing. Deliberately EXCLUDES `data` (the BLOB)
-// so listing the tree never loads image bytes into memory.
 const nodeSelect = {
   id: true,
   name: true,
@@ -18,10 +16,8 @@ const nodeSelect = {
 } satisfies Prisma.NodeSelect;
 
 type NodeView = Prisma.NodeGetPayload<{ select: typeof nodeSelect }>;
+type Crumb = { id: string; name: string; parentId: string | null };
 
-// ---------- shaping helpers ----------
-
-/** Public representation of a node (never includes the raw binary bytes). */
 function toPublic(node: NodeView) {
   const base = {
     id: node.id,
@@ -33,7 +29,6 @@ function toPublic(node: NodeView) {
   };
   if (node.type !== NodeType.FILE) return base;
 
-  // A file with no text content is a binary (uploaded) file.
   const isBinary = node.content === null;
   return {
     ...base,
@@ -42,81 +37,96 @@ function toPublic(node: NodeView) {
       node.mimeType ??
       (isBinary ? "application/octet-stream" : "text/plain; charset=utf-8"),
     size: node.size ?? (node.content ? Buffer.byteLength(node.content) : 0),
-    // The frontend fetches/streams the actual bytes (or text) from here.
     rawUrl: `/api/nodes/${node.id}/raw`,
     ...(isBinary ? {} : { content: node.content ?? "" }),
   };
 }
 
-/** Folders first, then files; each group sorted alphabetically (case-insensitive). */
 function sortNodes(a: NodeView, b: NodeView): number {
   if (a.type !== b.type) return a.type === NodeType.FOLDER ? -1 : 1;
   return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 }
 
-// ---------- internal lookups ----------
+async function getUserRoot(userId: string): Promise<NodeView> {
+  const root = await prisma.node.findFirst({
+    where: { ownerId: userId, parentId: null, type: NodeType.FOLDER },
+    select: nodeSelect,
+  });
+  if (!root) throw new AppError(500, "Root folder not found");
+  return root;
+}
 
-async function findOrThrow(id: string): Promise<NodeView> {
-  const node = await prisma.node.findUnique({
-    where: { id },
+async function findOrThrow(userId: string, id: string): Promise<NodeView> {
+  if (id === ROOT_ID) return getUserRoot(userId);
+
+  const node = await prisma.node.findFirst({
+    where: { id, ownerId: userId },
     select: nodeSelect,
   });
   if (!node) throw new AppError(404, `Node not found: ${id}`);
   return node;
 }
 
-async function assertFolder(id: string): Promise<NodeView> {
-  const node = await findOrThrow(id);
-  if (node.type !== NodeType.FOLDER)
+async function assertFolder(userId: string, id: string): Promise<NodeView> {
+  const node = await findOrThrow(userId, id);
+  if (node.type !== NodeType.FOLDER) {
     throw new AppError(400, `Node is not a folder: ${id}`);
+  }
   return node;
 }
 
-/** Rejects a name that is already taken by a sibling in the same folder. */
 async function assertNameAvailable(
+  userId: string,
   parentId: string,
   name: string,
   excludeId?: string,
 ): Promise<void> {
   const clash = await prisma.node.findFirst({
-    where: { parentId, name, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+    where: {
+      ownerId: userId,
+      parentId,
+      name,
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
     select: { id: true },
   });
   if (clash) throw new AppError(409, `"${name}" already exists in this folder`);
 }
 
-type Crumb = { id: string; name: string; parentId: string | null };
-
-/** Ancestor chain from the root down to (and including) the given node. */
 async function buildPath(
+  userId: string,
   node: Crumb,
 ): Promise<Array<{ id: string; name: string }>> {
   const path: Array<{ id: string; name: string }> = [];
   let current: Crumb | null = node;
+
   while (current) {
     path.unshift({ id: current.id, name: current.name });
     if (!current.parentId) break;
-    current = await prisma.node.findUnique({
-      where: { id: current.parentId },
+    current = await prisma.node.findFirst({
+      where: { id: current.parentId, ownerId: userId },
       select: { id: true, name: true, parentId: true },
     });
+    if (!current) throw new AppError(404, "Parent node not found");
   }
+
   return path;
 }
 
-/** True if `candidateId` lives somewhere inside the subtree rooted at `ancestorId`. */
 async function isDescendantOf(
+  userId: string,
   candidateId: string,
   ancestorId: string,
 ): Promise<boolean> {
-  let current = await prisma.node.findUnique({
-    where: { id: candidateId },
+  let current = await prisma.node.findFirst({
+    where: { id: candidateId, ownerId: userId },
     select: { id: true, parentId: true },
   });
+
   while (current && current.parentId) {
     if (current.parentId === ancestorId) return true;
-    current = await prisma.node.findUnique({
-      where: { id: current.parentId },
+    current = await prisma.node.findFirst({
+      where: { id: current.parentId, ownerId: userId },
       select: { id: true, parentId: true },
     });
   }
@@ -125,21 +135,26 @@ async function isDescendantOf(
 
 function translatePrisma(error: unknown): never {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (error.code === "P2002")
+    if (error.code === "P2002") {
       throw new AppError(
         409,
         "A node with this name already exists in this folder",
       );
+    }
     if (error.code === "P2025") throw new AppError(404, "Node not found");
   }
   throw error;
 }
 
-// ---------- public operations ----------
-
-/** Returns the whole tree as a nested structure rooted at the root folder. */
-export async function getTree() {
-  const all = await prisma.node.findMany({ select: nodeSelect });
+export async function getTree(userId: string) {
+  const all = await prisma.node.findMany({
+    where: { ownerId: userId },
+    select: nodeSelect,
+  });
+  const root = all.find(
+    (node) => node.parentId === null && node.type === NodeType.FOLDER,
+  );
+  if (!root) throw new AppError(500, "Root folder not found");
 
   const childrenByParent = new Map<string | null, NodeView[]>();
   for (const node of all) {
@@ -157,21 +172,17 @@ export async function getTree() {
     return { ...shaped, children };
   };
 
-  const root = all.find((n) => n.id === ROOT_ID);
-  if (!root)
-    throw new AppError(500, "Root folder is missing — run `npm run seed`.");
   return build(root);
 }
 
-/** Node metadata plus its breadcrumb path and (for folders) immediate children. */
-export async function getNode(id: string) {
-  const node = await findOrThrow(id);
-  const path = await buildPath(node);
+export async function getNode(userId: string, id: string) {
+  const node = await findOrThrow(userId, id);
+  const path = await buildPath(userId, node);
 
   let children: ReturnType<typeof toPublic>[] | undefined;
   if (node.type === NodeType.FOLDER) {
     const kids = await prisma.node.findMany({
-      where: { parentId: node.id },
+      where: { ownerId: userId, parentId: node.id },
       select: nodeSelect,
     });
     children = kids.sort(sortNodes).map(toPublic);
@@ -180,16 +191,12 @@ export async function getNode(id: string) {
   return { ...toPublic(node), path, children };
 }
 
-/** Create a folder or a TEXT file. (Binary files come in via `uploadNode`.) */
-export async function createNode(input: {
-  name: string;
-  type: NodeType;
-  parentId?: string;
-  content?: string;
-}) {
-  const parentId = input.parentId ?? ROOT_ID;
-  await assertFolder(parentId);
-  await assertNameAvailable(parentId, input.name);
+export async function createNode(
+  userId: string,
+  input: { name: string; type: NodeType; parentId?: string; content?: string },
+) {
+  const parent = await assertFolder(userId, input.parentId ?? ROOT_ID);
+  await assertNameAvailable(userId, parent.id, input.name);
 
   const isFile = input.type === NodeType.FILE;
   try {
@@ -197,7 +204,8 @@ export async function createNode(input: {
       data: {
         name: input.name,
         type: input.type,
-        parentId,
+        ownerId: userId,
+        parentId: parent.id,
         content: isFile ? (input.content ?? "") : null,
         size: isFile ? Buffer.byteLength(input.content ?? "") : null,
       },
@@ -209,27 +217,23 @@ export async function createNode(input: {
   }
 }
 
-/** Persist an uploaded binary file (PNG, etc.) as a BLOB. */
-export async function uploadNode(input: {
-  name: string;
-  parentId?: string;
-  mimeType: string;
-  buffer: Buffer;
-}) {
-  const parentId = input.parentId ?? ROOT_ID;
-  await assertFolder(parentId);
-
+export async function uploadNode(
+  userId: string,
+  input: { name: string; parentId?: string; mimeType: string; buffer: Buffer },
+) {
+  const parent = await assertFolder(userId, input.parentId ?? ROOT_ID);
   const name = input.name.trim();
   if (!name) throw new AppError(400, "File name is required");
   if (name.includes("/")) throw new AppError(400, 'name cannot contain "/"');
-  await assertNameAvailable(parentId, name);
+  await assertNameAvailable(userId, parent.id, name);
 
   try {
     const created = await prisma.node.create({
       data: {
         name,
         type: NodeType.FILE,
-        parentId,
+        ownerId: userId,
+        parentId: parent.id,
         content: null,
         data: new Uint8Array(input.buffer),
         mimeType: input.mimeType,
@@ -243,27 +247,29 @@ export async function uploadNode(input: {
   }
 }
 
-/** Rename a node and/or edit a TEXT file's content. */
 export async function updateNode(
+  userId: string,
   id: string,
   input: { name?: string; content?: string },
 ) {
-  const node = await findOrThrow(id);
+  const node = await findOrThrow(userId, id);
+  if (node.parentId === null) {
+    throw new AppError(400, "Cannot update the root folder");
+  }
 
   const data: Prisma.NodeUpdateInput = {};
-
   if (input.name !== undefined && input.name !== node.name) {
-    if (node.id === ROOT_ID)
-      throw new AppError(400, "Cannot rename the root folder");
-    await assertNameAvailable(node.parentId ?? ROOT_ID, input.name, node.id);
+    await assertNameAvailable(userId, node.parentId, input.name, node.id);
     data.name = input.name;
   }
 
   if (input.content !== undefined) {
-    if (node.type !== NodeType.FILE)
+    if (node.type !== NodeType.FILE) {
       throw new AppError(400, "Only files can have content");
-    if (node.content === null)
+    }
+    if (node.content === null) {
       throw new AppError(400, "Cannot edit a binary file as text");
+    }
     data.content = input.content;
     data.size = Buffer.byteLength(input.content);
   }
@@ -272,7 +278,7 @@ export async function updateNode(
 
   try {
     const updated = await prisma.node.update({
-      where: { id },
+      where: { id: node.id },
       data,
       select: nodeSelect,
     });
@@ -282,30 +288,34 @@ export async function updateNode(
   }
 }
 
-/** Move a node into a different folder (with cycle and name-collision guards). */
-export async function moveNode(id: string, newParentId: string) {
-  if (id === ROOT_ID) throw new AppError(400, "Cannot move the root folder");
+export async function moveNode(
+  userId: string,
+  id: string,
+  newParentId: string,
+) {
+  const node = await findOrThrow(userId, id);
+  if (node.parentId === null) {
+    throw new AppError(400, "Cannot move the root folder");
+  }
 
-  const node = await findOrThrow(id);
-  await assertFolder(newParentId);
-
-  if (newParentId === id)
+  const newParent = await assertFolder(userId, newParentId);
+  if (newParent.id === node.id) {
     throw new AppError(400, "Cannot move a node into itself");
-  if (await isDescendantOf(newParentId, id)) {
+  }
+  if (await isDescendantOf(userId, newParent.id, node.id)) {
     throw new AppError(
       400,
       "Cannot move a folder into one of its own descendants",
     );
   }
-
-  if (newParentId !== node.parentId) {
-    await assertNameAvailable(newParentId, node.name, node.id);
+  if (newParent.id !== node.parentId) {
+    await assertNameAvailable(userId, newParent.id, node.name, node.id);
   }
 
   try {
     const updated = await prisma.node.update({
-      where: { id },
-      data: { parentId: newParentId },
+      where: { id: node.id },
+      data: { parentId: newParent.id },
       select: nodeSelect,
     });
     return toPublic(updated);
@@ -314,18 +324,18 @@ export async function moveNode(id: string, newParentId: string) {
   }
 }
 
-/** Delete a node. Folders cascade-delete their entire subtree. */
-export async function deleteNode(id: string) {
-  if (id === ROOT_ID) throw new AppError(400, "Cannot delete the root folder");
-  await findOrThrow(id);
-  await prisma.node.delete({ where: { id } });
-  return { id, deleted: true };
+export async function deleteNode(userId: string, id: string) {
+  const node = await findOrThrow(userId, id);
+  if (node.parentId === null) {
+    throw new AppError(400, "Cannot delete the root folder");
+  }
+  await prisma.node.delete({ where: { id: node.id } });
+  return { id: node.id, deleted: true };
 }
 
-/** Fetch the raw bytes (or text) of a file for streaming back to the client. */
-export async function getRaw(id: string) {
-  const node = await prisma.node.findUnique({
-    where: { id },
+export async function getRaw(userId: string, id: string) {
+  const node = await prisma.node.findFirst({
+    where: { id, ownerId: userId },
     select: {
       id: true,
       name: true,
@@ -336,8 +346,9 @@ export async function getRaw(id: string) {
     },
   });
   if (!node) throw new AppError(404, `Node not found: ${id}`);
-  if (node.type !== NodeType.FILE)
+  if (node.type !== NodeType.FILE) {
     throw new AppError(400, "Only files have raw content");
+  }
 
   if (node.data) {
     return {
@@ -355,14 +366,14 @@ export async function getRaw(id: string) {
   };
 }
 
-/** Search nodes by name or text content. Returns matches with their full path. */
-export async function search(query: string) {
+export async function search(userId: string, query: string) {
   const term = query.trim();
   if (!term) return [];
 
   const matches = await prisma.node.findMany({
     where: {
-      id: { not: ROOT_ID },
+      ownerId: userId,
+      parentId: { not: null },
       OR: [{ name: { contains: term } }, { content: { contains: term } }],
     },
     select: nodeSelect,
@@ -371,16 +382,15 @@ export async function search(query: string) {
 
   const results = [];
   for (const node of matches.sort(sortNodes)) {
-    const path = await buildPath(node);
+    const path = await buildPath(userId, node);
     results.push({
       ...toPublic(node),
       path,
-      // Human-readable path, root folder name omitted: "/Documents/notes.md"
       pathString:
         "/" +
         path
           .slice(1)
-          .map((p) => p.name)
+          .map((part) => part.name)
           .join("/"),
     });
   }

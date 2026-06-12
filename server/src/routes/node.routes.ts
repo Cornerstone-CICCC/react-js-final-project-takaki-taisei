@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { upload } from "../middleware/upload";
+import { authenticate } from "../middleware/authenticate";
 import * as controller from "../controllers/node.controller";
 
 const router = Router();
+
+router.use(authenticate);
 
 // Whole tree (nested) and search come before the parameterised routes.
 router.get("/tree", asyncHandler(controller.getTree));

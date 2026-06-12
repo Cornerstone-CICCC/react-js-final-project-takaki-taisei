@@ -16,6 +16,7 @@ model User {
   username     String
   email        String   @unique
   passwordHash String
+  nodes        Node[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -28,7 +29,11 @@ model Node {
   data     Bytes? // binary body — for uploaded files like PNG (null otherwise)
   mimeType String? // MIME type, e.g. "image/png" or "text/plain"
   size     Int? // byte size of the file body
-  parentId String? // null only for the single root folder
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  parentId String? // null only for each user's root folder
 
   parent   Node?  @relation("NodeChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children Node[] @relation("NodeChildren")
@@ -37,6 +42,7 @@ model Node {
   updatedAt DateTime @updatedAt
 
   // No two siblings may share a name inside the same folder.
-  @@unique([parentId, name])
+  @@unique([ownerId, parentId, name])
   @@index([parentId])
+  @@index([ownerId])
 }

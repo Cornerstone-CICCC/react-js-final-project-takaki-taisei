@@ -20,7 +20,7 @@ router.use(
   }),
 );
 
-router.use("/", nodeRoutes);
 router.use("/auth", authRoutes);
+router.use("/", nodeRoutes);
 
 export default router;
