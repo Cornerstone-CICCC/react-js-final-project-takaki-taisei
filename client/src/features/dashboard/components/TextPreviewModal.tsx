@@ -306,7 +306,7 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
             )}
 
             {file && !isImage && !isVideo && !isAudio && !isPdf && !isText && (
-              <div className="max-w-md text-center">
+              <div className="max-w-75 text-center">
                 <FileQuestion
                   className="mx-auto mb-md size-16 text-outline"
                   aria-hidden="true"

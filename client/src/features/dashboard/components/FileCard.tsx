@@ -10,11 +10,16 @@ import {
   FileType,
   FileVideo,
   Presentation,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import type { NodeItem } from "../types";
 
-type Props = { file: NodeItem; onOpen: (file: NodeItem) => void };
+type Props = {
+  file: NodeItem;
+  onOpen: (file: NodeItem) => void;
+  onDeleteClick: (node: NodeItem) => void;
+};
 
 function formatFileSize(bytes: number | null) {
   if (bytes == null) return "Unknown size";
@@ -83,14 +88,15 @@ const typeIconMap: Record<string, LucideIcon> = {
   yml: FileCode,
 };
 
-function FileCard({ file, onOpen }: Props) {
+function FileCard({ file, onOpen, onDeleteClick }: Props) {
   const extension = file.name.includes(".")
     ? (file.name.split(".").pop()?.toLowerCase() ?? "")
     : "";
   const TypeIcon = typeIconMap[extension] ?? File;
 
   return (
-    <button
+    <div
+      role="button"
       onClick={() => onOpen(file)}
       className="group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full"
     >
@@ -98,9 +104,20 @@ function FileCard({ file, onOpen }: Props) {
         <TypeIcon className="size-10 text-error/50" aria-hidden="true" />
       </div>
       <div className="p-md">
-        <h4 className="font-label-md text-label-md text-on-surface truncate">
-          {file.name}
-        </h4>
+        <div className="flex justify-between mb-3 pr-4">
+          <h4 className="font-label-md text-label-md text-on-surface truncate">
+            {file.name}
+          </h4>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteClick(file);
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
+          >
+            <Trash2 />
+          </button>
+        </div>
         <div className="flex justify-between items-center mt-1">
           <p className="text-label-sm text-outline">
             {formatFileSize(file.size)}
@@ -110,7 +127,7 @@ function FileCard({ file, onOpen }: Props) {
           </span>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 

@@ -16,6 +16,7 @@ import {
 
 import DashboardSideBar from "../features/dashboard/components/DashboardSideBar";
 import {
+  deleteNode,
   getNode,
   getTree,
   uploadBinaryFile,
@@ -31,6 +32,7 @@ import { toast } from "sonner";
 import TextPreviewModal from "../features/dashboard/components/TextPreviewModal";
 import CreateFolderModal from "../features/dashboard/components/CreateFolderModal";
 import FileUploadModal from "../features/dashboard/components/FileUploadModal";
+import DeleteConfirmModal from "../features/dashboard/components/DeleteConfirmModal";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -47,6 +49,11 @@ function Dashboard() {
 
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [selectedFile, setSelectedFile] = useState<NodeItem | null>(null);
+
+  const [deletingNode, setDeletingNode] = useState<NodeItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deletingError, setDeletingError] = useState<string | null>(null);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isFolderCreateModalOpen, setIsFollderCreateModalOpen] =
@@ -105,6 +112,39 @@ function Dashboard() {
     } finally {
       setIsFileUploading(false);
     }
+  }
+
+  async function handleDeleteNode() {
+    try {
+      if (!deletingNode) {
+        return;
+      }
+      setIsDeleting(true);
+      setDeletingError(null);
+      await deleteNode(deletingNode?.id);
+      await loadCurrentNode();
+      setDeletingNode(null);
+      setIsDeleteModalOpen(false);
+      setDeletingError(null);
+      toast.success("Successfully deleted node");
+    } catch (e) {
+      toast.error("Failed to delete node");
+      setDeletingError(
+        e instanceof Error ? e.message : "Failed to delete node",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  function onDeleteClick(node: NodeItem) {
+    setDeletingNode(node);
+    setIsDeleteModalOpen(true);
+  }
+
+  function onCardClick(node: NodeItem) {
+    setDeletingNode(node);
+    setIsDeleteModalOpen(true);
   }
 
   // Fetch nodes everytime currentId changes
@@ -237,10 +277,8 @@ function Dashboard() {
               <FolderCard
                 folder={folder}
                 key={folder.id}
-                name={folder.name}
-                size={folder.size}
-                setCurrentFolderId={setCurrentFolderId}
-                id={folder.id}
+                onOpen={onFolderClick}
+                onDeleteClick={onDeleteClick}
               />
             ))
           ) : (
@@ -259,7 +297,12 @@ function Dashboard() {
           {/* File Card renders here */}
           {allFiles.length !== 0 ? (
             allFiles.map((file) => (
-              <FileCard key={file.id} file={file} onOpen={openModal} />
+              <FileCard
+                key={file.id}
+                file={file}
+                onOpen={openModal}
+                onDeleteClick={onCardClick}
+              />
             ))
           ) : (
             <div>
@@ -293,6 +336,20 @@ function Dashboard() {
           closeModal={() => setIsUploadModalOpen(false)}
           isUploading={isFileUploading}
           processError={uploadError}
+        />
+      )}
+
+      {isDeleteModalOpen && deletingNode && (
+        <DeleteConfirmModal
+          onDelete={handleDeleteNode}
+          node={deletingNode!}
+          isDeleting={isDeleting}
+          onCancel={() => {
+            if (isDeleting) return setDeletingNode(null);
+            setIsDeleteModalOpen(false);
+            setDeletingError(null);
+          }}
+          error={deletingError}
         />
       )}
     </div>
