@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/AppError";
-import { NodeType } from "../types/node.types";
 import type { LoginInput, SignupInput } from "../validation/auth.schema";
 
 const publicUserSelect = { id: true, username: true, email: true } as const;
@@ -17,6 +16,7 @@ export async function signup(input: SignupInput) {
 
   const passwordHash = await bcrypt.hash(input.password, 12);
 
+  // create user-specific root folder for user
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: { username: input.username, email: input.email, passwordHash },
@@ -24,12 +24,7 @@ export async function signup(input: SignupInput) {
     });
 
     await tx.node.create({
-      data: {
-        name: "root",
-        type: NodeType.FOLDER,
-        ownerId: user.id,
-        parentId: null,
-      },
+      data: { name: "root", type: "FOLDER", ownerId: user.id, parentId: null },
     });
 
     return user;

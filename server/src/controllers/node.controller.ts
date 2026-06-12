@@ -57,6 +57,7 @@ export async function uploadNode(req: Request, res: Response) {
       'No file uploaded — send it as multipart form field "file"',
     );
   }
+
   const meta = uploadMetaSchema.parse({
     name: req.body?.name || undefined,
     parentId: req.body?.parentId || undefined,
@@ -81,7 +82,10 @@ export async function getRaw(req: Request, res: Response) {
 }
 
 export async function deleteNode(req: Request, res: Response) {
-  const result = await service.deleteNode(getUserId(req), String(req.params.id));
+  const result = await service.deleteNode(
+    getUserId(req),
+    String(req.params.id),
+  );
   res.json({ data: result });
 }
 
