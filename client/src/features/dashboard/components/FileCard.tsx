@@ -9,6 +9,7 @@ import {
   FileText,
   FileType,
   FileVideo,
+  Pencil,
   Presentation,
   Trash2,
   type LucideIcon,
@@ -19,6 +20,7 @@ type Props = {
   file: NodeItem;
   onOpen: (file: NodeItem) => void;
   onDeleteClick: (node: NodeItem) => void;
+  onRenameClick: (node: NodeItem) => void;
 };
 
 function formatFileSize(bytes: number | null) {
@@ -88,7 +90,7 @@ const typeIconMap: Record<string, LucideIcon> = {
   yml: FileCode,
 };
 
-function FileCard({ file, onOpen, onDeleteClick }: Props) {
+function FileCard({ file, onOpen, onDeleteClick, onRenameClick }: Props) {
   const extension = file.name.includes(".")
     ? (file.name.split(".").pop()?.toLowerCase() ?? "")
     : "";
@@ -104,19 +106,30 @@ function FileCard({ file, onOpen, onDeleteClick }: Props) {
         <TypeIcon className="size-10 text-error/50" aria-hidden="true" />
       </div>
       <div className="p-md">
-        <div className="flex justify-between mb-3 pr-4">
+        <div className="flex justify-between mb-3 pr-2">
           <h4 className="font-label-md text-label-md text-on-surface truncate">
             {file.name}
           </h4>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteClick(file);
-            }}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
-          >
-            <Trash2 />
-          </button>
+          <div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick(file);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
+            >
+              <Trash2 />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRenameClick(file);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
+            >
+              <Pencil />
+            </button>
+          </div>
         </div>
         <div className="flex justify-between items-center mt-1">
           <p className="text-label-sm text-outline">

@@ -27,7 +27,7 @@ function FileUploadModal({
   isUploading,
 }: Props) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [, setIsDragging] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);

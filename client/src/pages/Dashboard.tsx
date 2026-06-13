@@ -5,7 +5,7 @@
 // - Whenever user clicks folder, change the currentFolder id to that folder.id
 // - Whenever currentFolderId changes, it fetches the contents
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type TreeNode,
   type BreadCrumb,
@@ -57,10 +57,12 @@ function Dashboard() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deletingError, setDeletingError] = useState<string | null>(null);
+  const isDeletingRef = useRef(false);
 
   const [renamingNode, setRenamingNode] = useState<NodeItem | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  const isRenamingRef = useRef(false);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isFolderCreateModalOpen, setIsFollderCreateModalOpen] =
@@ -74,6 +76,7 @@ function Dashboard() {
   const [searchResults, setSearchResults] = useState<NodeItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchRefreshVersion, setSearchRefreshVersion] = useState(0);
 
   const isSearchMode = searchTerm.trim().length > 0;
 
@@ -81,6 +84,15 @@ function Dashboard() {
 
   const allFolders = displayNodes.filter((node) => node.type === "FOLDER");
   const allFiles = displayNodes.filter((node) => node.type === "FILE");
+
+  function onSearchChange(value: string) {
+    setSearchTerm(value);
+
+    if (!value.trim()) {
+      setSearchResults([]);
+      setSearchError(null);
+    }
+  }
 
   function onFolderClick(id: string) {
     setCurrentFolderId(id);
@@ -116,6 +128,16 @@ function Dashboard() {
     setTree(tree);
   }
 
+  async function refreshAfterMutation() {
+    setSearchRefreshVersion((version) => version + 1);
+
+    try {
+      await loadCurrentNode();
+    } catch {
+      toast.error("Change saved, but the dashboard could not refresh");
+    }
+  }
+
   async function uploadFile(file: File) {
     if (file.size > MAX_FILE_SIZE) {
       setUplodError("File must be smaller than 10mb");
@@ -126,9 +148,9 @@ function Dashboard() {
       setIsFileUploading(true);
       setUplodError(null);
       await uploadBinaryFile(file, currentFolderId);
-      await loadCurrentNode();
       toast.success("Successfully uploaded file");
       setIsUploadModalOpen(false);
+      await refreshAfterMutation();
     } catch (e) {
       setUplodError(e instanceof Error ? e.message : "Failed to upload file");
       toast.error("Failed to upload file");
@@ -138,41 +160,56 @@ function Dashboard() {
   }
 
   async function handleDeleteNode() {
+    if (!deletingNode || isDeletingRef.current) return;
+
+    isDeletingRef.current = true;
+    setIsDeleting(true);
+    setDeletingError(null);
+
     try {
-      if (!deletingNode) {
-        return;
-      }
-      setIsDeleting(true);
-      setDeletingError(null);
-      await deleteNode(deletingNode?.id);
-      await loadCurrentNode();
+      await deleteNode(deletingNode.id);
+      setSearchResults((results) =>
+        results.filter((node) => node.id !== deletingNode.id),
+      );
       setDeletingNode(null);
       setIsDeleteModalOpen(false);
       setDeletingError(null);
       toast.success("Successfully deleted node");
+      await refreshAfterMutation();
     } catch (e) {
       toast.error("Failed to delete node");
       setDeletingError(
         e instanceof Error ? e.message : "Failed to delete node",
       );
     } finally {
+      isDeletingRef.current = false;
       setIsDeleting(false);
     }
   }
 
   async function handleRename(name: string, content?: string) {
-    if (!renamingNode) return;
+    if (!renamingNode || isRenamingRef.current) return;
+
+    isRenamingRef.current = true;
+    setIsRenaming(true);
+    setRenameError(null);
+
     try {
-      setIsRenaming(true);
-      setRenameError(null);
-      await renameNode(renamingNode?.id, name, content);
-      await loadCurrentNode();
+      const renamedNode = await renameNode(renamingNode.id, name, content);
+      setSearchResults((results) =>
+        results.map((node) =>
+          node.id === renamedNode.id ? renamedNode : node,
+        ),
+      );
       setRenamingNode(null);
       setRenameError(null);
-      toast.success("Successfully renamed folder");
+      toast.success("Successfully renamed node");
+      await refreshAfterMutation();
     } catch (e) {
       toast.error("Failed to rename node");
+      setRenameError(e instanceof Error ? e.message : "Failed to rename");
     } finally {
+      isRenamingRef.current = false;
       setIsRenaming(false);
     }
   }
@@ -182,11 +219,6 @@ function Dashboard() {
   }
 
   function onDeleteClick(node: NodeItem) {
-    setDeletingNode(node);
-    setIsDeleteModalOpen(true);
-  }
-
-  function onCardClick(node: NodeItem) {
     setDeletingNode(node);
     setIsDeleteModalOpen(true);
   }
@@ -237,8 +269,6 @@ function Dashboard() {
     const trimmedTerm = searchTerm.trim();
 
     if (!trimmedTerm) {
-      setSearchError(null);
-      setSearchResults([]);
       return;
     }
 
@@ -268,7 +298,7 @@ function Dashboard() {
       isStale = true;
       window.clearTimeout(timeoutId);
     };
-  }, [searchTerm]);
+  }, [searchTerm, searchRefreshVersion]);
 
   if (isLoading) {
     return <Spinner />;
@@ -276,10 +306,7 @@ function Dashboard() {
 
   return (
     <div>
-      <DashboardHeader
-        onSearchKey={(value: string) => setSearchTerm(value)}
-        value={searchTerm}
-      />
+      <DashboardHeader onSearchKey={onSearchChange} value={searchTerm} />
       <DashboardSideBar
         folder={tree}
         onFolderClick={onFolderClick}
@@ -404,7 +431,8 @@ function Dashboard() {
                 key={file.id}
                 file={file}
                 onOpen={openModal}
-                onDeleteClick={onCardClick}
+                onDeleteClick={onDeleteClick}
+                onRenameClick={onRenameClick}
               />
             ))
           ) : (

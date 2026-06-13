@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFolder } from "../../../api/contents/contents.api";
 import { toast } from "sonner";
 import type { NodeItem } from "../types";
@@ -19,17 +19,22 @@ function CreateFolderModal({
 }: Props) {
   const [folderName, SetFolderName] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const isSubmittingRef = useRef(false);
 
   async function handleOnClick() {
-    try {
-      setIsSubmitting(true);
-      const trimmedName = folderName.trim();
+    if (isSubmittingRef.current) return;
 
-      if (!trimmedName) {
-        toast.error("Folder name is required.");
-        return;
-      }
-      const newFolder = await createFolder(folderName.trim(), currentFolderId);
+    const trimmedName = folderName.trim();
+    if (!trimmedName) {
+      toast.error("Folder name is required.");
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      const newFolder = await createFolder(trimmedName, currentFolderId);
       onFolderCreated(newFolder);
       SetFolderName("");
       handleClose();
@@ -38,6 +43,7 @@ function CreateFolderModal({
         e instanceof Error ? e.message : "Failed to create new folder",
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   }

@@ -47,7 +47,7 @@ function RenameModal({
             className="font-label-sm text-label-sm text-on-surface-variant ml-1"
             htmlFor="fileName"
           >
-            File Name
+            {node.type === "FILE" ? "File" : "Folder"} Name
           </label>
           <div className="relative">
             <input
@@ -68,13 +68,15 @@ function RenameModal({
         </div>
         <div className="flex flex-col gap-sm">
           <button
+            type="button"
             className={`w-full py-3.5 ${disabled ? "bg-gray-600/40 text-gray-600 cursor-not-allowed" : "active:scale-9 bg-primary-container hover:bg-primary text-white"}  font-label-md text-label-md rounded-xl  transition-all 5 shadow-md shadow-primary/20`}
             disabled={disabled}
-            onClick={() => onRename(renameInput)}
+            onClick={() => onRename(renameInput.trim())}
           >
-            Rename
+            {isRenaming ? "Renaming..." : "Rename"}
           </button>
           <button
+            type="button"
             className="w-full py-3.5 bg-transparent text-primary font-label-md text-label-md rounded-xl hover:bg-surface-container-low transition-all active:scale-95"
             id="closeModal"
             onClick={() => closeModal()}
