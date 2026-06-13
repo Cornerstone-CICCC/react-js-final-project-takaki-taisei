@@ -184,10 +184,9 @@ function FileCard({
                 e.stopPropagation();
                 onMoveClick(file);
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
             >
-              <FolderInput size={16} />
-              Move
+              <FolderInput />
             </button>
           </div>
         </div>

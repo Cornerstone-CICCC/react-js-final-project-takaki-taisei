@@ -28,7 +28,7 @@ function MoveNodeModal({
   const disabled = isMoving || !selectedFolderId;
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 md:p-8"
+      className="fixed inset-0 z-1000 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 md:p-8"
       onClick={() => {
         if (isMoving) return;
         onClose();
