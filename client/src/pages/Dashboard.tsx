@@ -19,12 +19,14 @@ import {
   deleteNode,
   getNode,
   getTree,
+  renameNode,
+  searchNodes,
   uploadBinaryFile,
 } from "../api/contents/contents.api";
 import Spinner from "../components/Spinner";
 
 import FolderCard from "../features/dashboard/components/FolderCard";
-import DashboardHeader from "../components/DashboardHeader";
+import DashboardHeader from "../features/dashboard/components/DashboardHeader";
 import FileCard from "../features/dashboard/components/FileCard";
 import { ArrowDown, FolderPlus, Grid2x2, List, Upload } from "lucide-react";
 import BreadCrumbComponent from "../features/dashboard/components/BreadCrumbComponent";
@@ -33,6 +35,7 @@ import TextPreviewModal from "../features/dashboard/components/TextPreviewModal"
 import CreateFolderModal from "../features/dashboard/components/CreateFolderModal";
 import FileUploadModal from "../features/dashboard/components/FileUploadModal";
 import DeleteConfirmModal from "../features/dashboard/components/DeleteConfirmModal";
+import RenameModal from "../features/dashboard/components/RenameModal";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -55,6 +58,10 @@ function Dashboard() {
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deletingError, setDeletingError] = useState<string | null>(null);
 
+  const [renamingNode, setRenamingNode] = useState<NodeItem | null>(null);
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
+
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isFolderCreateModalOpen, setIsFollderCreateModalOpen] =
     useState<boolean>(false);
@@ -63,11 +70,27 @@ function Dashboard() {
   // const [sortOption, setSortOption] = useState<SortOption>("name-asc");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  const allFolders = children.filter((node) => node.type === "FOLDER");
-  const allFiles = children.filter((node) => node.type === "FILE");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<NodeItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  const isSearchMode = searchTerm.trim().length > 0;
+
+  const displayNodes = isSearchMode ? searchResults : children;
+
+  const allFolders = displayNodes.filter((node) => node.type === "FOLDER");
+  const allFiles = displayNodes.filter((node) => node.type === "FILE");
 
   function onFolderClick(id: string) {
     setCurrentFolderId(id);
+
+    // when search mode, clicking the folder should clear search results
+    if (isSearchMode) {
+      setSearchTerm("");
+      setSearchResults([]);
+      setSearchError(null);
+    }
   }
 
   function onClose() {
@@ -137,6 +160,27 @@ function Dashboard() {
     }
   }
 
+  async function handleRename(name: string, content?: string) {
+    if (!renamingNode) return;
+    try {
+      setIsRenaming(true);
+      setRenameError(null);
+      await renameNode(renamingNode?.id, name, content);
+      await loadCurrentNode();
+      setRenamingNode(null);
+      setRenameError(null);
+      toast.success("Successfully renamed folder");
+    } catch (e) {
+      toast.error("Failed to rename node");
+    } finally {
+      setIsRenaming(false);
+    }
+  }
+
+  function onRenameClick(node: NodeItem) {
+    setRenamingNode(node);
+  }
+
   function onDeleteClick(node: NodeItem) {
     setDeletingNode(node);
     setIsDeleteModalOpen(true);
@@ -188,13 +232,54 @@ function Dashboard() {
     fetchTree();
   }, []);
 
+  // run searching everytime search time changes with debouncing
+  useEffect(() => {
+    const trimmedTerm = searchTerm.trim();
+
+    if (!trimmedTerm) {
+      setSearchError(null);
+      setSearchResults([]);
+      return;
+    }
+
+    let isStale = false;
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setIsSearching(true);
+        setSearchError(null);
+        const result = await searchNodes(trimmedTerm);
+        if (!isStale) {
+          setSearchResults(result);
+        }
+      } catch (e) {
+        if (!isStale) {
+          setSearchError(e instanceof Error ? e.message : "Failed to search");
+          toast.error(e instanceof Error ? e.message : "search failed.");
+        }
+      } finally {
+        if (!isStale) {
+          setIsSearching(false);
+        }
+      }
+    }, 400);
+
+    return () => {
+      isStale = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchTerm]);
+
   if (isLoading) {
     return <Spinner />;
   }
 
   return (
     <div>
-      <DashboardHeader />
+      <DashboardHeader
+        onSearchKey={(value: string) => setSearchTerm(value)}
+        value={searchTerm}
+      />
       <DashboardSideBar
         folder={tree}
         onFolderClick={onFolderClick}
@@ -213,7 +298,9 @@ function Dashboard() {
             <h1 className="font-headline-lg text-headline-lg text-on-surface">
               {currentFolderName.toUpperCase()}
             </h1>
-            <p className="text-body-md text-on-surface-variant">12 items</p>
+            <p className="text-body-md text-on-surface-variant">
+              {children.length} items
+            </p>
           </div>
           <div className="flex items-center gap-sm">
             <button
@@ -265,6 +352,21 @@ function Dashboard() {
             </button>
           </div>
         </div>
+        {isSearchMode && (
+          <div className="mb-xl rounded-2xl border border-outline-variant bg-surface-container-lowest px-md py-sm">
+            <p className="text-sm text-on-surface-variant">
+              {isSearching
+                ? "Searching..."
+                : `${searchResults.length} result${
+                    searchResults.length === 1 ? "" : "s"
+                  } for "${searchTerm.trim()}"`}
+            </p>
+
+            {searchError && (
+              <p className="mt-2 text-sm text-red-600">{searchError}</p>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-lg">
           <div className="col-span-full mb-2">
             <h3 className="text-label-md font-label-md text-outline uppercase tracking-wider">
@@ -279,6 +381,7 @@ function Dashboard() {
                 key={folder.id}
                 onOpen={onFolderClick}
                 onDeleteClick={onDeleteClick}
+                onRenameClick={onRenameClick}
               />
             ))
           ) : (
@@ -345,11 +448,26 @@ function Dashboard() {
           node={deletingNode!}
           isDeleting={isDeleting}
           onCancel={() => {
-            if (isDeleting) return setDeletingNode(null);
+            if (isDeleting) return;
+            setDeletingNode(null);
             setIsDeleteModalOpen(false);
             setDeletingError(null);
           }}
           error={deletingError}
+        />
+      )}
+
+      {renamingNode && (
+        <RenameModal
+          onRename={handleRename}
+          closeModal={() => {
+            if (isRenaming) return;
+            setRenamingNode(null);
+            setRenameError(null);
+          }}
+          isRenaming={isRenaming}
+          renameError={renameError}
+          node={renamingNode}
         />
       )}
     </div>

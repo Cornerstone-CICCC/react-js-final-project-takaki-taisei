@@ -1,10 +1,13 @@
 import { Bell, Folder, LogOut } from "lucide-react";
-import { logout } from "../api/auth/auth.api";
-import { userStore } from "../store/userStore";
+import { logout } from "../../../api/auth/auth.api";
+import { userStore } from "../../../store/userStore";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import SearchComponent from "./SearchComponent";
 
-function DashboardHeader() {
+type Props = { onSearchKey: (value: string) => void; value: string };
+
+function DashboardHeader({ onSearchKey, value }: Props) {
   const clearUser = userStore((state) => state.clearUser);
   const navigate = useNavigate();
 
@@ -24,21 +27,7 @@ function DashboardHeader() {
         <Folder className="material-symbols-outlined text-primary" />
         VaultBox
       </div>
-      <div className="flex-1 max-w-xl mx-xl hidden md:block">
-        <div className="relative group">
-          <span
-            className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline"
-            data-icon="search"
-          >
-            search
-          </span>
-          <input
-            className="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-body-md transition-all"
-            placeholder="Search files, folders, documents..."
-            type="text"
-          />
-        </div>
-      </div>
+      <SearchComponent onSearchKey={onSearchKey} value={value} />
       <div className="flex items-center gap-md">
         <button className="p-2 rounded-full hover:bg-surface-container transition-colors">
           <Bell className="material-symbols-outlined text-on-surface-variant" />

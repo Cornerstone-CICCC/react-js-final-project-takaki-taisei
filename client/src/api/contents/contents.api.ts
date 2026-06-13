@@ -70,8 +70,8 @@ export async function renameNode(id: string, name: string, content?: string) {
   return data;
 }
 
-export async function searchNodes(query: string) {
-  const data = request(`/search?q=${encodeURIComponent(query)}`);
+export async function searchNodes(query: string): Promise<NodeItem[]> {
+  const data = request<NodeItem[]>(`/search?q=${encodeURIComponent(query)}`);
   return data;
 }
 

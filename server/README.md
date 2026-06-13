@@ -43,16 +43,16 @@ Handy scripts:
 
 A single self-referential `Node` table models both folders and files:
 
-| Field      | Notes                                                      |
-| ---------- | ---------------------------------------------------------- |
+| Field      | Notes                                                       |
+| ---------- | ----------------------------------------------------------- |
 | `id`       | `cuid` (`root` is an API alias for the current user's root) |
-| `name`     | unique among siblings in the same folder                   |
-| `type`     | `"FILE"` or `"FOLDER"`                                     |
-| `content`  | **text** body — for text files (`null` for folders/binary) |
-| `data`     | **binary** body (BLOB) — for uploaded files like PNG       |
-| `mimeType` | MIME type, e.g. `image/png`, `text/plain`                  |
-| `size`     | byte size of the file body                                 |
-| `parentId` | parent folder id (`null` only for the root)                |
+| `name`     | unique among siblings in the same folder                    |
+| `type`     | `"FILE"` or `"FOLDER"`                                      |
+| `content`  | **text** body — for text files (`null` for folders/binary)  |
+| `data`     | **binary** body (BLOB) — for uploaded files like PNG        |
+| `mimeType` | MIME type, e.g. `image/png`, `text/plain`                   |
+| `size`     | byte size of the file body                                  |
+| `parentId` | parent folder id (`null` only for the root)                 |
 
 A file is **text** (editable `content`) or **binary** (uploaded `data`, served as-is).
 API responses include `isBinary` and a `rawUrl`; the raw bytes are **never** embedded in
