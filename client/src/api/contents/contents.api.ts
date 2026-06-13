@@ -87,6 +87,16 @@ export async function deleteNode(id: string) {
   return data;
 }
 
+export async function moveNode(
+  nodeId: string,
+  parentId: string,
+): Promise<NodeItem> {
+  return request<NodeItem>(`/nodes/${nodeId}/move`, {
+    method: "POST",
+    body: JSON.stringify({ parentId }),
+  });
+}
+
 export async function uploadBinaryFile(
   file: File,
   parentId: string,

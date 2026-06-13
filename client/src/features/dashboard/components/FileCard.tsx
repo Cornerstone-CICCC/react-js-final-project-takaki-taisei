@@ -9,6 +9,7 @@ import {
   FileText,
   FileType,
   FileVideo,
+  FolderInput,
   Pencil,
   Presentation,
   Trash2,
@@ -21,6 +22,8 @@ type Props = {
   onOpen: (file: NodeItem) => void;
   onDeleteClick: (node: NodeItem) => void;
   onRenameClick: (node: NodeItem) => void;
+  viewMode: "grid" | "list";
+  onMoveClick: (file: NodeItem) => void;
 };
 
 function formatFileSize(bytes: number | null) {
@@ -90,11 +93,38 @@ const typeIconMap: Record<string, LucideIcon> = {
   yml: FileCode,
 };
 
-function FileCard({ file, onOpen, onDeleteClick, onRenameClick }: Props) {
+function formatUpdatedAgo(updatedAt: string) {
+  const updatedAtMs = new Date(updatedAt).getTime();
+
+  if (Number.isNaN(updatedAtMs)) {
+    return "Unknown time";
+  }
+
+  const diffInMs = Date.now() - updatedAtMs;
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInMinutes < 1) return "Just now";
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return `${diffInDays}d ago`;
+}
+
+function FileCard({
+  file,
+  onOpen,
+  onDeleteClick,
+  onRenameClick,
+  viewMode,
+  onMoveClick,
+}: Props) {
   const extension = file.name.includes(".")
     ? (file.name.split(".").pop()?.toLowerCase() ?? "")
     : "";
   const TypeIcon = typeIconMap[extension] ?? File;
+
+  const updatedTime = formatUpdatedAgo(file.updatedAt);
 
   return (
     <div
@@ -111,17 +141,21 @@ function FileCard({ file, onOpen, onDeleteClick, onRenameClick }: Props) {
           onOpen(file);
         }
       }}
-      className="group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full"
+      className={`group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex h-full ${viewMode === "list" ? "flex-row" : "flex-col"}`}
     >
-      <div className="aspect-video bg-surface-container-low flex items-center justify-center relative">
+      <div
+        className={`aspect-video bg-surface-container-low flex items-center justify-center relative ${viewMode === "list" && "max-w-25"}`}
+      >
         <TypeIcon className="size-10 text-error/50" aria-hidden="true" />
       </div>
-      <div className="p-md">
-        <div className="flex justify-between mb-3 pr-2">
+      <div className="p-md w-full">
+        <div
+          className={`flex  mb-3 ${viewMode === "grid" ? "justify-between items-center" : "justify-between items-center"}`}
+        >
           <h4 className="font-label-md text-label-md text-on-surface truncate">
             {file.name}
           </h4>
-          <div>
+          <div className="min-w-25">
             <button
               type="button"
               aria-label={`Delete ${file.name}`}
@@ -144,6 +178,17 @@ function FileCard({ file, onOpen, onDeleteClick, onRenameClick }: Props) {
             >
               <Pencil />
             </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveClick(file);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container"
+            >
+              <FolderInput size={16} />
+              Move
+            </button>
           </div>
         </div>
         <div className="flex justify-between items-center mt-1">
@@ -151,7 +196,7 @@ function FileCard({ file, onOpen, onDeleteClick, onRenameClick }: Props) {
             {formatFileSize(file.size)}
           </p>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
-            2h ago
+            {updatedTime}
           </span>
         </div>
       </div>

@@ -1,4 +1,10 @@
-import { EllipsisVertical, Folder, Pencil, Trash2 } from "lucide-react";
+import {
+  EllipsisVertical,
+  Folder,
+  FolderInput,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import type { NodeItem } from "../types";
 import { useState } from "react";
 
@@ -7,9 +13,16 @@ type Props = {
   onOpen: (folderId: string) => void;
   onDeleteClick: (folder: NodeItem) => void;
   onRenameClick: (folder: NodeItem) => void;
+  onMoveClick: (folder: NodeItem) => void;
 };
 
-function FolderCard({ folder, onOpen, onDeleteClick, onRenameClick }: Props) {
+function FolderCard({
+  folder,
+  onOpen,
+  onDeleteClick,
+  onRenameClick,
+  onMoveClick,
+}: Props) {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   return (
     <div
@@ -72,6 +85,18 @@ function FolderCard({ folder, onOpen, onDeleteClick, onRenameClick }: Props) {
               >
                 <Pencil size={16} />
                 Rename
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onMoveClick(folder);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container"
+              >
+                <FolderInput size={16} />
+                Move
               </button>
 
               <button

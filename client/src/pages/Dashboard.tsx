@@ -19,6 +19,7 @@ import {
   deleteNode,
   getNode,
   getTree,
+  moveNode,
   renameNode,
   searchNodes,
   uploadBinaryFile,
@@ -36,6 +37,8 @@ import CreateFolderModal from "../features/dashboard/components/CreateFolderModa
 import FileUploadModal from "../features/dashboard/components/FileUploadModal";
 import DeleteConfirmModal from "../features/dashboard/components/DeleteConfirmModal";
 import RenameModal from "../features/dashboard/components/RenameModal";
+import { flattenFolders } from "../features/dashboard/lib/flattenFolders";
+import MoveNodeModal from "../features/dashboard/components/MoveNodeModal";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -53,16 +56,24 @@ function Dashboard() {
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [selectedFile, setSelectedFile] = useState<NodeItem | null>(null);
 
+  // deleting
   const [deletingNode, setDeletingNode] = useState<NodeItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deletingError, setDeletingError] = useState<string | null>(null);
   const isDeletingRef = useRef(false);
 
+  // renaming
   const [renamingNode, setRenamingNode] = useState<NodeItem | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
   const isRenamingRef = useRef(false);
+
+  // moving
+  const [movingNode, setMovingNode] = useState<NodeItem | null>(null);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isFolderCreateModalOpen, setIsFollderCreateModalOpen] =
@@ -84,14 +95,14 @@ function Dashboard() {
     (a, b) => {
       if (sortOption === "name") return a.name.localeCompare(b.name);
       if (sortOption === "size") return (b.size ?? 0) - (a.size ?? 0);
-      return (
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     },
   );
 
   const allFolders = displayNodes.filter((node) => node.type === "FOLDER");
   const allFiles = displayNodes.filter((node) => node.type === "FILE");
+
+  const flattenedFolders = tree ? flattenFolders(tree) : [];
 
   function onSearchChange(value: string) {
     setSearchTerm(value);
@@ -223,6 +234,36 @@ function Dashboard() {
     }
   }
 
+  async function handleMoveNode(destinationFolderId: string) {
+    if (!movingNode) return;
+
+    try {
+      setIsMoving(true);
+      setMoveError(null);
+
+      await moveNode(movingNode.id, destinationFolderId);
+
+      await loadCurrentNode();
+
+      setSearchResults((prev) =>
+        prev.filter((node) => node.id !== movingNode.id),
+      );
+
+      toast.success(
+        `Moved ${movingNode.type === "FOLDER" ? "folder" : "file"} successfully`,
+      );
+
+      setMovingNode(null);
+      setIsMoveModalOpen(false);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to move node";
+      setMoveError(message);
+      toast.error(message);
+    } finally {
+      setIsMoving(false);
+    }
+  }
+
   function onRenameClick(node: NodeItem) {
     setRenamingNode(node);
   }
@@ -230,6 +271,12 @@ function Dashboard() {
   function onDeleteClick(node: NodeItem) {
     setDeletingNode(node);
     setIsDeleteModalOpen(true);
+  }
+
+  function onMoveClick(node: NodeItem) {
+    setMovingNode(node);
+    setIsMoveModalOpen(true);
+    setMoveError(null);
   }
 
   // Fetch nodes everytime currentId changes
@@ -429,7 +476,7 @@ function Dashboard() {
               : "grid-cols-1"
           }`}
         >
-          <div className="col-span-full mb-2">
+          <div className="col-span-full mviewModeb-2">
             <h3 className="text-label-md font-label-md text-outline uppercase tracking-wider">
               Folders
             </h3>
@@ -443,6 +490,7 @@ function Dashboard() {
                 onOpen={onFolderClick}
                 onDeleteClick={onDeleteClick}
                 onRenameClick={onRenameClick}
+                onMoveClick={onMoveClick}
               />
             ))
           ) : (
@@ -467,6 +515,8 @@ function Dashboard() {
                 onOpen={openModal}
                 onDeleteClick={onDeleteClick}
                 onRenameClick={onRenameClick}
+                viewMode={viewMode}
+                onMoveClick={onMoveClick}
               />
             ))
           ) : (
@@ -530,6 +580,21 @@ function Dashboard() {
           isRenaming={isRenaming}
           renameError={renameError}
           node={renamingNode}
+        />
+      )}
+
+      {isMoveModalOpen && (
+        <MoveNodeModal
+          handleMove={handleMoveNode}
+          isMoving={isMoving}
+          flattenedNodes={flattenedFolders}
+          moveError={moveError}
+          onClose={() => {
+            if (isMoving) return;
+            setMovingNode(null);
+            setIsMoveModalOpen(false);
+            setMoveError(null);
+          }}
         />
       )}
     </div>

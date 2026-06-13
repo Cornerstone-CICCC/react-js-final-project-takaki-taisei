@@ -17,7 +17,7 @@ function DashboardSideBarItem({
   onFolderClick,
   depth,
 }: Props) {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(true);
 
   const hasChildren =
     folder.children &&
