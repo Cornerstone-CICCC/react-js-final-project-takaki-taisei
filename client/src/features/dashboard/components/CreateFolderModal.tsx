@@ -1,14 +1,14 @@
 import { useRef, useState } from "react";
 import { createFolder } from "../../../api/contents/contents.api";
 import { toast } from "sonner";
-import type { NodeItem } from "../types";
 import { Info } from "lucide-react";
+import { useModalAccessibility } from "../hooks/useModalAccessibility";
 
 type Props = {
   currentFolderId: string;
   currentFolderName: string;
   handleClose: () => void;
-  onFolderCreated: (folder: NodeItem) => void;
+  onFolderCreated: () => Promise<void>;
 };
 
 function CreateFolderModal({
@@ -20,6 +20,7 @@ function CreateFolderModal({
   const [folderName, SetFolderName] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const isSubmittingRef = useRef(false);
+  const dialogRef = useModalAccessibility(handleClose, isSubmitting);
 
   async function handleOnClick() {
     if (isSubmittingRef.current) return;
@@ -34,10 +35,10 @@ function CreateFolderModal({
     setIsSubmitting(true);
 
     try {
-      const newFolder = await createFolder(trimmedName, currentFolderId);
-      onFolderCreated(newFolder);
+      await createFolder(trimmedName, currentFolderId);
       SetFolderName("");
       handleClose();
+      await onFolderCreated();
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "Failed to create new folder",
@@ -51,15 +52,22 @@ function CreateFolderModal({
     <div
       className="bg-black/40 backdrop-blur-2xl fixed inset-0 z-60 flex items-center justify-center px-margin-mobile"
       onClick={() => {
-        handleClose();
+        if (!isSubmitting) handleClose();
       }}
     >
-      <section
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-folder-title"
         className="bg-surface-container-lowest w-[min(100%,32rem)] rounded-2xl p-lg shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col items-center gap-sm mb-lg">
-          <h2 className="font-headline-md text-headline-md text-on-surface text-center">
+          <h2
+            id="create-folder-title"
+            className="font-headline-md text-headline-md text-on-surface text-center"
+          >
             New Folder
           </h2>
         </div>
@@ -94,11 +102,12 @@ function CreateFolderModal({
         </div>
         <div className="mt-xl flex flex-col gap-sm">
           <button
+            type="button"
             className="w-full py-md bg-primary-container text-on-primary-container rounded-full font-label-md text-label-md font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all"
             disabled={isSubmitting || !folderName.trim()}
             onClick={handleOnClick}
           >
-            Create
+            {isSubmitting ? "Creating..." : "Create"}
           </button>
           <button
             className="w-full py-md bg-transparent text-primary font-label-md text-label-md font-semibold hover:bg-surface-container rounded-full transition-colors"
@@ -111,7 +120,7 @@ function CreateFolderModal({
             Cancel
           </button>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

@@ -99,7 +99,18 @@ function FileCard({ file, onOpen, onDeleteClick, onRenameClick }: Props) {
   return (
     <div
       role="button"
+      tabIndex={0}
+      aria-label={`Open ${file.name}`}
       onClick={() => onOpen(file)}
+      onKeyDown={(event) => {
+        if (
+          event.target === event.currentTarget &&
+          (event.key === "Enter" || event.key === " ")
+        ) {
+          event.preventDefault();
+          onOpen(file);
+        }
+      }}
       className="group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full"
     >
       <div className="aspect-video bg-surface-container-low flex items-center justify-center relative">
@@ -112,20 +123,24 @@ function FileCard({ file, onOpen, onDeleteClick, onRenameClick }: Props) {
           </h4>
           <div>
             <button
+              type="button"
+              aria-label={`Delete ${file.name}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onDeleteClick(file);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
             >
               <Trash2 />
             </button>
             <button
+              type="button"
+              aria-label={`Rename ${file.name}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onRenameClick(file);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
             >
               <Pencil />
             </button>

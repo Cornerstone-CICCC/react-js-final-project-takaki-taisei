@@ -4,12 +4,13 @@ type Props = { onSearchKey: (value: string) => void; value: string };
 
 function SearchComponent({ onSearchKey, value }: Props) {
   return (
-    <div className="flex-1 max-w-xl mx-xl hidden md:block md:min-w-100">
+    <div className="flex-1 max-w-xl mx-1 md:mx-xl md:min-w-100">
       <div className="relative group">
         <Search className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
         <input
           className="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-body-md transition-all"
           placeholder="Search files, folders, documents..."
+          aria-label="Search files, folders, and documents"
           type="text"
           value={value}
           onChange={(e) => onSearchKey(e.target.value)}

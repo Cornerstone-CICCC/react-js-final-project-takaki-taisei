@@ -1,4 +1,4 @@
-import { HardDrive } from "lucide-react";
+import { CircleX, HardDrive } from "lucide-react";
 import type { TreeNode } from "../types";
 import DashboardSideBarItem from "./DashboardSideBarItem";
 
@@ -6,36 +6,65 @@ type Props = {
   folder: TreeNode | null;
   currentFolderId: string | null;
   onFolderClick: (id: string) => void;
+  isMobileOpen: boolean;
+  onClose: () => void;
 };
 
-function DashboardSideBar({ folder, onFolderClick, currentFolderId }: Props) {
+function DashboardSideBar({
+  folder,
+  onFolderClick,
+  currentFolderId,
+  isMobileOpen,
+  onClose,
+}: Props) {
   return (
-    <aside className="hidden lg:flex flex-col gap-sm p-md w-70 h-full bg-surface border-r border-outline-variant fixed left-0 top-16">
-      <div className="mb-6">
-        <p className="text-lg font-semibold text-slate-900">VaultBox</p>
-        <p className="text-sm text-slate-500">Your secure drive</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onFolderClick("root")}
-        className="flex items-center gap-md bg-primary-container text-on-primary-container rounded-lg px-md py-sm transition-all"
-      >
-        <HardDrive />
-        My Drive
-      </button>
-      {folder?.children.map(
-        (f) =>
-          f.type === "FOLDER" && (
-            <DashboardSideBarItem
-              key={f.id}
-              folder={f}
-              currentFolderId={currentFolderId}
-              onFolderClick={onFolderClick}
-              depth={0}
-            />
-          ),
+    <>
+      {isMobileOpen && (
+        <button
+          type="button"
+          aria-label="Close folder navigation"
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+        />
       )}
-    </aside>
+      <aside
+        aria-label="Folder navigation"
+        className={`${isMobileOpen ? "flex" : "hidden"} lg:flex flex-col gap-sm p-md w-70 h-[calc(100vh-4rem)] bg-surface border-r border-outline-variant fixed left-0 top-16 z-50 overflow-y-auto`}
+      >
+        <button
+          type="button"
+          aria-label="Close folder navigation"
+          onClick={onClose}
+          className="self-end p-1 rounded-full hover:bg-surface-container lg:hidden"
+        >
+          <CircleX />
+        </button>
+        <div className="mb-6">
+          <p className="text-lg font-semibold text-slate-900">VaultBox</p>
+          <p className="text-sm text-slate-500">Your secure drive</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onFolderClick("root")}
+          className="flex items-center gap-md bg-primary-container text-on-primary-container rounded-lg px-md py-sm transition-all"
+        >
+          <HardDrive />
+          My Drive
+        </button>
+        {folder?.children.map(
+          (f) =>
+            f.type === "FOLDER" && (
+              <DashboardSideBarItem
+                key={f.id}
+                folder={f}
+                currentFolderId={currentFolderId}
+                onFolderClick={onFolderClick}
+                depth={0}
+              />
+            ),
+        )}
+      </aside>
+    </>
   );
 }
 

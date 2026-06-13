@@ -1,5 +1,7 @@
 export type NodeType = "FILE" | "FOLDER";
 
+export type BreadCrumb = { id: string; name: string };
+
 export type NodeItem = {
   id: string;
   name: string;
@@ -12,9 +14,8 @@ export type NodeItem = {
   rawUrl?: string;
   createdAt: string;
   updatedAt: string;
+  path?: BreadCrumb[];
 };
-
-export type BreadCrumb = { id: string; name: string };
 
 export type GetNodeResponse = NodeItem & {
   path: BreadCrumb[];
@@ -23,11 +24,7 @@ export type GetNodeResponse = NodeItem & {
 
 export type TreeNode = NodeItem & { children: TreeNode[] };
 
-export type SortOption =
-  | "name-asc"
-  | "name-desc"
-  | "updated-asc"
-  | "updated-desc";
+export type SortOption = "newest" | "name" | "size";
 
 export type ViewMode = "grid" | "list";
 

@@ -19,7 +19,7 @@ function App() {
         setIsLoading(true);
         const user = await getMe();
         setUser(user);
-      } catch (e) {
+      } catch {
         clearUser();
       } finally {
         setIsLoading(false);

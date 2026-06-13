@@ -1,6 +1,7 @@
 import { CircleX, Pencil } from "lucide-react";
 import { useState } from "react";
 import type { NodeItem } from "../types";
+import { useModalAccessibility } from "../hooks/useModalAccessibility";
 
 type Props = {
   onRename: (name: string) => void;
@@ -18,15 +19,22 @@ function RenameModal({
   node,
 }: Props) {
   const [renameInput, setRenameInput] = useState<string>(node.name);
+  const dialogRef = useModalAccessibility(closeModal, isRenaming);
 
   const disabled = isRenaming || renameInput.trim().length === 0;
   return (
     <div
       className="backdrop-blur-sm bg-black/30 fixed inset-0 z-100 flex items-center justify-center px-margin-mobile"
       id="renameModal"
-      onClick={() => closeModal()}
+      onClick={() => {
+        if (!isRenaming) closeModal();
+      }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rename-dialog-title"
         className="bg-white w-full max-w-150 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 scale-100 opacity-100 p-lg border border-outline-variant"
         onClick={(e) => e.stopPropagation()}
       >
@@ -34,7 +42,10 @@ function RenameModal({
           <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-xs">
             <Pencil className="material-symbols-outlined text-[32px]" />
           </div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">
+          <h1
+            id="rename-dialog-title"
+            className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface"
+          >
             Rename
           </h1>
           <p className="font-body-md text-body-md text-outline">
@@ -59,6 +70,8 @@ function RenameModal({
               onChange={(e) => setRenameInput(e.target.value)}
             />
             <button
+              type="button"
+              aria-label="Clear name"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors"
               onClick={() => setRenameInput("")}
             >
@@ -80,6 +93,7 @@ function RenameModal({
             className="w-full py-3.5 bg-transparent text-primary font-label-md text-label-md rounded-xl hover:bg-surface-container-low transition-all active:scale-95"
             id="closeModal"
             onClick={() => closeModal()}
+            disabled={isRenaming}
           >
             Cancel
           </button>

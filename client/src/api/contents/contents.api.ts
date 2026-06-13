@@ -3,6 +3,7 @@ import type {
   NodeItem,
   TreeNode,
 } from "../../features/dashboard/types";
+import { userStore } from "../../store/userStore";
 
 const backendUrl =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:4000/api";
@@ -18,6 +19,10 @@ export async function request<T>(
   });
 
   const data = await res.json().catch(() => null);
+
+  if (res.status === 401) {
+    userStore.getState().clearUser();
+  }
 
   if (!res.ok) {
     throw new Error(data?.error || data?.message || "Request Failed");
@@ -86,8 +91,6 @@ export async function uploadBinaryFile(
   file: File,
   parentId: string,
 ): Promise<NodeItem> {
-  console.log(file);
-
   const form = new FormData();
 
   form.append("file", file);
@@ -100,6 +103,10 @@ export async function uploadBinaryFile(
   });
 
   const data = await res.json().catch(() => null);
+
+  if (res.status === 401) {
+    userStore.getState().clearUser();
+  }
 
   if (!res.ok) {
     throw new Error(data?.error || data?.message || "Failed to upload");

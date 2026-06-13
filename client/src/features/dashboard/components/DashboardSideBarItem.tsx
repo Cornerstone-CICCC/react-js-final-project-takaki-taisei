@@ -54,7 +54,9 @@ function DashboardSideBarItem({
         <button
           type="button"
           onClick={() => {
-            folder.type === "FOLDER" && onFolderClick(folder.id);
+            if (folder.type === "FOLDER") {
+              onFolderClick(folder.id);
+            }
           }}
           className={`flex flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm ${
             isActive

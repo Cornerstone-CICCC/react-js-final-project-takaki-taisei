@@ -19,7 +19,10 @@ function FolderCard({ folder, onOpen, onDeleteClick, onRenameClick }: Props) {
         onOpen(folder.id);
       }}
       onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
+        if (
+          event.target === event.currentTarget &&
+          (event.key === "Enter" || event.key === " ")
+        ) {
           event.preventDefault();
           onOpen(folder.id);
         }
@@ -37,13 +40,14 @@ function FolderCard({ folder, onOpen, onDeleteClick, onRenameClick }: Props) {
               event.stopPropagation();
               onDeleteClick(folder);
             }}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
+            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
           >
             <Trash2 className="text-on-surface-variant" />
           </button>
           <button
             type="button"
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
+            aria-label={`Open actions for ${folder.name}`}
+            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 p-1 rounded-full hover:bg-surface-container transition-all"
             onClick={(e) => {
               e.stopPropagation();
               setIsMenuOpen((prev) => !prev);
@@ -63,6 +67,7 @@ function FolderCard({ folder, onOpen, onDeleteClick, onRenameClick }: Props) {
                   setIsMenuOpen(false);
                   onRenameClick(folder);
                 }}
+                onKeyDown={(event) => event.stopPropagation()}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container"
               >
                 <Pencil size={16} />
@@ -75,6 +80,7 @@ function FolderCard({ folder, onOpen, onDeleteClick, onRenameClick }: Props) {
                   setIsMenuOpen(false);
                   onDeleteClick(folder);
                 }}
+                onKeyDown={(event) => event.stopPropagation()}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm text-error hover:bg-surface-container"
               >
                 <Trash2 size={16} />

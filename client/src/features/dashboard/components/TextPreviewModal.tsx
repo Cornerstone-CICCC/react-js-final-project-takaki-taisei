@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { BreadCrumb, NodeItem } from "../types";
 import { getRawNodeUrl } from "../../../api/contents/contents.api";
+import { useModalAccessibility } from "../hooks/useModalAccessibility";
 
 type Props = {
   onClose: () => void;
@@ -178,6 +179,7 @@ function formatDate(value: string) {
 }
 
 function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
+  const dialogRef = useModalAccessibility(onClose);
   function generateViewBreadCrumb() {
     const breadCrumNames = breadCrumbs.map((bc) => bc.name);
     return breadCrumNames.join(" / ");
@@ -212,6 +214,10 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
       onClick={() => onClose()}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-dialog-title"
         className="bg-white w-full max-w-6xl h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] max-h-204.75 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-outline-variant animate-in fade-in zoom-in duration-300"
         onClick={(event) => event.stopPropagation()}
       >
@@ -221,7 +227,10 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
               <PreviewIcon className="text-primary" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-headline-md font-headline-md">
+              <h2
+                id="preview-dialog-title"
+                className="text-headline-md font-headline-md"
+              >
                 {file?.name}
               </h2>
             </div>

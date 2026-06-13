@@ -10,7 +10,7 @@ import {
   type TreeNode,
   type BreadCrumb,
   type NodeItem,
-  // type SortOption,
+  type SortOption,
   type ViewMode,
 } from "../features/dashboard/types";
 
@@ -67,9 +67,9 @@ function Dashboard() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isFolderCreateModalOpen, setIsFollderCreateModalOpen] =
     useState<boolean>(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // const [searchQuery, setSearchQuery] = useState<string>("");
-  // const [sortOption, setSortOption] = useState<SortOption>("name-asc");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,7 +80,15 @@ function Dashboard() {
 
   const isSearchMode = searchTerm.trim().length > 0;
 
-  const displayNodes = isSearchMode ? searchResults : children;
+  const displayNodes = [...(isSearchMode ? searchResults : children)].sort(
+    (a, b) => {
+      if (sortOption === "name") return a.name.localeCompare(b.name);
+      if (sortOption === "size") return (b.size ?? 0) - (a.size ?? 0);
+      return (
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+    },
+  );
 
   const allFolders = displayNodes.filter((node) => node.type === "FOLDER");
   const allFiles = displayNodes.filter((node) => node.type === "FILE");
@@ -96,6 +104,7 @@ function Dashboard() {
 
   function onFolderClick(id: string) {
     setCurrentFolderId(id);
+    setIsMobileNavOpen(false);
 
     // when search mode, clicking the folder should clear search results
     if (isSearchMode) {
@@ -306,11 +315,17 @@ function Dashboard() {
 
   return (
     <div>
-      <DashboardHeader onSearchKey={onSearchChange} value={searchTerm} />
+      <DashboardHeader
+        onSearchKey={onSearchChange}
+        value={searchTerm}
+        onMenuClick={() => setIsMobileNavOpen(true)}
+      />
       <DashboardSideBar
         folder={tree}
         onFolderClick={onFolderClick}
         currentFolderId={currentFolderId}
+        isMobileOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
       />
       <main className="flex-1 ml-0 lg:ml-70 overflow-y-auto bg-background p-margin-desktop">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
@@ -353,10 +368,17 @@ function Dashboard() {
         <div className="flex items-center justify-between mb-lg bg-surface-container-lowest p-sm rounded-2xl shadow-sm">
           <div className="flex items-center gap-md">
             <div className="relative">
-              <select className="appearance-none bg-surface-container-low border-none rounded-lg pl-3 pr-8 py-2 text-label-md font-label-md text-on-surface-variant cursor-pointer focus:ring-0">
-                <option>Sort: Newest</option>
-                <option>Sort: Name</option>
-                <option>Sort: Size</option>
+              <select
+                aria-label="Sort files and folders"
+                className="appearance-none bg-surface-container-low border-none rounded-lg pl-3 pr-8 py-2 text-label-md font-label-md text-on-surface-variant cursor-pointer focus:ring-0"
+                value={sortOption}
+                onChange={(event) =>
+                  setSortOption(event.target.value as SortOption)
+                }
+              >
+                <option value="newest">Sort: Newest</option>
+                <option value="name">Sort: Name</option>
+                <option value="size">Sort: Size</option>
               </select>
 
               <ArrowDown className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-sm" />
@@ -366,6 +388,9 @@ function Dashboard() {
             <button
               className={`${viewMode === "grid" ? "bg-surface-container-lowest text-primary" : "text-on-surface-variant hover:bg-surface-container-high "} p-1.5 rounded-md   shadow-sm transition-all`}
               id="grid-toggle"
+              type="button"
+              aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
               onClick={() => setViewMode("grid")}
             >
               <Grid2x2 className="material-symbols-outlined text-md" />
@@ -373,6 +398,9 @@ function Dashboard() {
             <button
               className={`${viewMode === "list" ? "bg-surface-container-lowest text-primary" : "text-on-surface-variant hover:bg-surface-container-high "} p-1.5 rounded-md   shadow-sm transition-all`}
               id="list-toggle"
+              type="button"
+              aria-label="List view"
+              aria-pressed={viewMode === "list"}
               onClick={() => setViewMode("list")}
             >
               <List className="material-symbols-outlined text-md" />
@@ -394,7 +422,13 @@ function Dashboard() {
             )}
           </div>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-lg">
+        <div
+          className={`grid gap-lg ${
+            viewMode === "grid"
+              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+              : "grid-cols-1"
+          }`}
+        >
           <div className="col-span-full mb-2">
             <h3 className="text-label-md font-label-md text-outline uppercase tracking-wider">
               Folders
@@ -448,7 +482,7 @@ function Dashboard() {
         <TextPreviewModal
           onClose={onClose}
           file={selectedFile}
-          breadCrumbs={breadCrumbs}
+          breadCrumbs={selectedFile?.path ?? breadCrumbs}
         />
       )}
 
@@ -456,7 +490,7 @@ function Dashboard() {
         <CreateFolderModal
           currentFolderId={currentFolderId}
           handleClose={closeFolderModal}
-          onFolderCreated={loadCurrentNode}
+          onFolderCreated={refreshAfterMutation}
           currentFolderName={currentFolderName}
         />
       )}

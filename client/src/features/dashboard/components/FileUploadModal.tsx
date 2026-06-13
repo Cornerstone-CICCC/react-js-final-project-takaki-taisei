@@ -4,6 +4,7 @@
 
 import { CircleX, CloudUpload, FileText, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
+import { useModalAccessibility } from "../hooks/useModalAccessibility";
 
 type Props = {
   onUpload: (file: File) => void;
@@ -31,6 +32,7 @@ function FileUploadModal({
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dialogRef = useModalAccessibility(closeModal, isUploading);
 
   function selectFile(file: File) {
     setUploadError(null);
@@ -54,16 +56,33 @@ function FileUploadModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 backdrop-blur-2xl bg-black/50 flex items-center justify-center p-margin-mobile">
-      <div className="bg-surface-container-lowest w-full max-w-160 rounded-xl shadow-[0_10px_20px_rgba(15,23,42,0.1)] border border-outline-variant flex flex-col animate-in fade-in zoom-in duration-300">
+    <div
+      className="fixed inset-0 z-60 backdrop-blur-2xl bg-black/50 flex items-center justify-center p-margin-mobile"
+      onClick={() => {
+        if (!isUploading) closeModal();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="upload-dialog-title"
+        className="bg-surface-container-lowest w-full max-w-160 rounded-xl shadow-[0_10px_20px_rgba(15,23,42,0.1)] border border-outline-variant flex flex-col animate-in fade-in zoom-in duration-300"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="px-lg py-md border-b border-outline-variant flex justify-between items-center">
-          <h2 className="font-headline-md text-headline-md text-on-surface">
+          <h2
+            id="upload-dialog-title"
+            className="font-headline-md text-headline-md text-on-surface"
+          >
             Upload files
           </h2>
           <button
             className="p-xs hover:bg-surface-container rounded-full transition-colors"
             onClick={() => closeModal()}
             disabled={isUploading}
+            type="button"
+            aria-label="Close upload dialog"
           >
             <CircleX
               className="material-symbols-outlined text-on-surface-variant"
@@ -151,14 +170,13 @@ function FileUploadModal({
                 >
                   <Trash2 className="material-symbols-outlined text-on-surface-variant" />
                 </button>
-
-                {(uploadError || processError) && (
-                  <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                    {uploadError || processError}
-                  </p>
-                )}
               </div>
             </div>
+          )}
+          {(uploadError || processError) && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+              {uploadError || processError}
+            </p>
           )}
         </div>
         <div className="px-lg py-md border-t border-outline-variant flex justify-end gap-md">

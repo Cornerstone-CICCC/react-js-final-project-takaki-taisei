@@ -1,13 +1,17 @@
-import { Bell, Folder, LogOut } from "lucide-react";
+import { Bell, Folder, LogOut, Menu } from "lucide-react";
 import { logout } from "../../../api/auth/auth.api";
 import { userStore } from "../../../store/userStore";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import SearchComponent from "./SearchComponent";
 
-type Props = { onSearchKey: (value: string) => void; value: string };
+type Props = {
+  onSearchKey: (value: string) => void;
+  value: string;
+  onMenuClick: () => void;
+};
 
-function DashboardHeader({ onSearchKey, value }: Props) {
+function DashboardHeader({ onSearchKey, value, onMenuClick }: Props) {
   const clearUser = userStore((state) => state.clearUser);
   const navigate = useNavigate();
 
@@ -22,14 +26,26 @@ function DashboardHeader({ onSearchKey, value }: Props) {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center w-full px-margin-desktop py-md bg-surface-container-lowest shadow-sm h-16">
-      <div className="flex items-center gap-2 text-headline-md font-headline-md font-bold text-on-surface">
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-sm w-full px-margin-mobile md:px-margin-desktop py-md bg-surface-container-lowest shadow-sm h-16">
+      <button
+        type="button"
+        aria-label="Open folder navigation"
+        onClick={onMenuClick}
+        className="p-2 rounded-full hover:bg-surface-container transition-colors lg:hidden"
+      >
+        <Menu className="text-on-surface-variant" />
+      </button>
+      <div className="hidden sm:flex items-center gap-2 text-headline-md font-headline-md font-bold text-on-surface">
         <Folder className="material-symbols-outlined text-primary" />
         VaultBox
       </div>
       <SearchComponent onSearchKey={onSearchKey} value={value} />
       <div className="flex items-center gap-md">
-        <button className="p-2 rounded-full hover:bg-surface-container transition-colors">
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="hidden sm:block p-2 rounded-full hover:bg-surface-container transition-colors"
+        >
           <Bell className="material-symbols-outlined text-on-surface-variant" />
         </button>
         <button
