@@ -31,6 +31,10 @@ function FolderCard({
       onClick={() => {
         onOpen(folder.id);
       }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setIsMenuOpen(true);
+      }}
       onKeyDown={(event) => {
         if (
           event.target === event.currentTarget &&

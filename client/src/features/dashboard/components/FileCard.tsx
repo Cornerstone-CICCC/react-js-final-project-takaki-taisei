@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { NodeItem } from "../types";
+import { useState } from "react";
 
 type Props = {
   file: NodeItem;
@@ -119,6 +120,8 @@ function FileCard({
   viewMode,
   onMoveClick,
 }: Props) {
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
   const extension = file.name.includes(".")
     ? (file.name.split(".").pop()?.toLowerCase() ?? "")
     : "";
@@ -132,6 +135,10 @@ function FileCard({
       tabIndex={0}
       aria-label={`Open ${file.name}`}
       onClick={() => onOpen(file)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setIsMenuOpen((prev) => !prev);
+      }}
       onKeyDown={(event) => {
         if (
           event.target === event.currentTarget &&
@@ -141,8 +148,52 @@ function FileCard({
           onOpen(file);
         }
       }}
-      className={`group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex h-full ${viewMode === "list" ? "flex-row" : "flex-col"}`}
+      className={`relative group bg-surface-container-lowest p-0 rounded-2xl border border-outline-variant hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden flex h-full ${viewMode === "list" ? "flex-row" : "flex-col"}`}
     >
+      {isMenuOpen && (
+        <div
+          onClick={(event) => event.stopPropagation()}
+          className="absolute right-0 top-6 z-20 w-36 rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg overflow-hidden"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              onRenameClick(file);
+            }}
+            onKeyDown={(event) => event.stopPropagation()}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container"
+          >
+            <Pencil size={16} />
+            Rename
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              onMoveClick(file);
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container"
+          >
+            <FolderInput size={16} />
+            Move
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              onDeleteClick(file);
+            }}
+            onKeyDown={(event) => event.stopPropagation()}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-error hover:bg-surface-container"
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
+        </div>
+      )}
       <div
         className={`aspect-video bg-surface-container-low flex items-center justify-center relative ${viewMode === "list" && "max-w-25"}`}
       >
