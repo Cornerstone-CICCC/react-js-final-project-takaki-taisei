@@ -153,7 +153,7 @@ function FileCard({
       {isMenuOpen && (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute right-0 top-6 z-20 w-36 rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg overflow-hidden"
+          className="absolute right-0 top-6 z-20 w-36 rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg overflow-hidden "
         >
           <button
             type="button"

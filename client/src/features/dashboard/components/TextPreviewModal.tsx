@@ -244,7 +244,7 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
                   className="flex items-center gap-2 px-md py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md hover:opacity-90 transition-all active:scale-95"
                 >
                   <Download className="material-symbols-outlined text-[18px]" />
-                  Download
+                  <span className="hidden md:block">Download</span>
                 </a>
                 <a
                   href={rawUrl}
@@ -253,7 +253,7 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
                   className="flex items-center gap-2 px-md py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md hover:opacity-90 transition-all active:scale-95"
                 >
                   <ExternalLink className="material-symbols-outlined text-[18px]" />
-                  Open
+                  <span className="hidden md:block">Open</span>
                 </a>
               </>
             )}

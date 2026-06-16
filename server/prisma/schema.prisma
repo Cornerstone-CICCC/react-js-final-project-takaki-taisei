@@ -35,6 +35,14 @@ model Node {
 
   parentId String? // null only for each user's root folder
 
+  // Cloudinary file storage metadata.
+  storageProvider String? // "local" | "cloudinary"
+  publicId        String?
+  resourceType    String?
+  secureUrl       String?
+  bytes           Int?
+  format          String?
+
   parent   Node?  @relation("NodeChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children Node[] @relation("NodeChildren")
 

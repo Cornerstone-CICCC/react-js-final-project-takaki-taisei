@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
+import { deleteFileFromStorage, uploadFileToStorage } from "./storage.service";
 import { NodeType, ROOT_ID } from "../types/node.types";
 import { AppError } from "../utils/AppError";
 
@@ -11,6 +12,8 @@ const nodeSelect = {
   mimeType: true,
   size: true,
   parentId: true,
+  storageProvider: true,
+  secureUrl: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.NodeSelect;
@@ -227,6 +230,13 @@ export async function uploadNode(
   if (name.includes("/")) throw new AppError(400, 'name cannot contain "/"');
   await assertNameAvailable(userId, parent.id, name);
 
+  // Uploading to cloudinary
+  const uploadedFile = await uploadFileToStorage({
+    buffer: input.buffer,
+    originalName: name,
+    mimeType: input.mimeType,
+  });
+
   try {
     const created = await prisma.node.create({
       data: {
@@ -235,14 +245,24 @@ export async function uploadNode(
         ownerId: userId,
         parentId: parent.id,
         content: null,
-        data: new Uint8Array(input.buffer),
+        data: null,
         mimeType: input.mimeType,
         size: input.buffer.length,
+        storageProvider: uploadedFile.storageProvider,
+        publicId: uploadedFile.publicId,
+        resourceType: uploadedFile.resourceType,
+        secureUrl: uploadedFile.secureUrl,
+        bytes: uploadedFile.bytes,
+        format: uploadedFile.format,
       },
       select: nodeSelect,
     });
     return toPublic(created);
   } catch (error) {
+    await deleteFileFromStorage({
+      publicId: uploadedFile.publicId,
+      resourceType: uploadedFile.resourceType,
+    });
     translatePrisma(error);
   }
 }
@@ -329,6 +349,21 @@ export async function deleteNode(userId: string, id: string) {
   if (node.parentId === null) {
     throw new AppError(400, "Cannot delete the root folder");
   }
+
+  const nodesToDelete = await collectNodeAndDescendants(userId, node.id);
+  for (const file of nodesToDelete) {
+    if (
+      file.type === NodeType.FILE &&
+      file.storageProvider === "cloudinary" &&
+      file.publicId
+    ) {
+      await deleteFileFromStorage({
+        publicId: file.publicId,
+        resourceType: file.resourceType,
+      });
+    }
+  }
+
   await prisma.node.delete({ where: { id: node.id } });
   return { id: node.id, deleted: true };
 }
@@ -343,11 +378,22 @@ export async function getRaw(userId: string, id: string) {
       content: true,
       data: true,
       mimeType: true,
+      storageProvider: true,
+      secureUrl: true,
     },
   });
   if (!node) throw new AppError(404, `Node not found: ${id}`);
   if (node.type !== NodeType.FILE) {
     throw new AppError(400, "Only files have raw content");
+  }
+
+  if (node.storageProvider === "cloudinary" && node.secureUrl) {
+    return {
+      kind: "redirect" as const,
+      url: node.secureUrl,
+      name: node.name,
+      mimeType: node.mimeType ?? "application/octet-stream",
+    };
   }
 
   if (node.data) {
@@ -364,6 +410,42 @@ export async function getRaw(userId: string, id: string) {
     mimeType: node.mimeType ?? "text/plain; charset=utf-8",
     text: node.content ?? "",
   };
+}
+
+async function collectNodeAndDescendants(userId: string, nodeId: string) {
+  const nodes = await prisma.node.findMany({
+    where: { ownerId: userId },
+    select: {
+      id: true,
+      type: true,
+      parentId: true,
+      storageProvider: true,
+      publicId: true,
+      resourceType: true,
+    },
+  });
+
+  const childrenByParent = new Map<string | null, typeof nodes>();
+  for (const node of nodes) {
+    const siblings = childrenByParent.get(node.parentId) ?? [];
+    siblings.push(node);
+    childrenByParent.set(node.parentId, siblings);
+  }
+
+  const selected: Array<(typeof nodes)[number]> = [];
+  const queue = [nodeId];
+  while (queue.length) {
+    const currentId = queue.shift();
+    const current = nodes.find((node) => node.id === currentId);
+    if (!current) continue;
+
+    selected.push(current);
+    for (const child of childrenByParent.get(current.id) ?? []) {
+      queue.push(child.id);
+    }
+  }
+
+  return selected;
 }
 
 export async function search(userId: string, query: string) {

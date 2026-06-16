@@ -73,6 +73,10 @@ export async function uploadNode(req: Request, res: Response) {
 
 export async function getRaw(req: Request, res: Response) {
   const raw = await service.getRaw(getUserId(req), String(req.params.id));
+  if (raw.kind === "redirect") {
+    return res.redirect(raw.url);
+  }
+
   res.type(raw.mimeType);
   res.setHeader(
     "Content-Disposition",
