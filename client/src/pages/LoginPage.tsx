@@ -35,9 +35,7 @@ function LoginPage() {
         <div className="bg-surface-container-lowest tonal-elevation-1 rounded-xl p-xl border border-outline-variant/30 flex flex-col items-center">
           <header className="flex flex-col items-center gap-sm mb-xl">
             <div className="w-12 h-12 bg-primary flex items-center justify-center rounded-xl shadow-sm">
-              <span className="material-symbols-outlined text-on-primary text-[28px]">
-                folder
-              </span>
+              <Lock className="material-symbols-outlined text-on-primary text-[28px]" />
             </div>
             <h1 className="font-headline-lg text-headline-lg text-on-background tracking-tight">
               VaultBox
