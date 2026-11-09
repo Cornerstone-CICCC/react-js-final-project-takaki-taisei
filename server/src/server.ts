@@ -1,18 +1,32 @@
-import { createApp } from './app';
-import { env, validateEnvironment } from './config/env';
-import { prisma } from './lib/prisma';
-import { storage } from './lib/storage';
-import { processStorageCleanup } from './services/storageCleanup.service';
+import { createApp } from "./app";
+import { env, validateEnvironment } from "./config/env";
+import { prisma } from "./lib/prisma";
+import { storage } from "./lib/storage";
+import { processStorageCleanup } from "./services/storageCleanup.service";
 
 async function main() {
+  console.info("[STARTUP] 1. Validating environment");
   validateEnvironment();
-  await prisma.$connect();
-  await storage.assertPrivate();
-  if (await prisma.node.count({ where: { type: 'FILE', content: null, storageKey: null } })) {
-    throw new Error('Binary storage migration is incomplete');
-  }
-  await prisma.storageCleanup.count(); // fail before listening if migration 0002 is missing
 
+  console.info("[STARTUP] 2. Connecting PostgreSQL");
+  await prisma.$connect();
+
+  console.info("[STARTUP] 3. Verifying Supabase Storage");
+  await storage.assertPrivate();
+
+  console.info("[STARTUP] 4. Checking binary migration");
+  if (
+    await prisma.node.count({
+      where: { type: "FILE", content: null, storageKey: null },
+    })
+  ) {
+    throw new Error("Binary storage migration is incomplete");
+  }
+
+  console.info("[STARTUP] 5. Checking StorageCleanup migration");
+  await prisma.storageCleanup.count();
+
+  console.info("[STARTUP] 6. Creating Express application");
   const app = createApp();
   const server = app.listen(env.port, () => {
     console.log(`🗂  Pseudo-FS API listening on http://localhost:${env.port}`);
@@ -24,9 +38,14 @@ async function main() {
 
   let cleanup: Promise<void> | undefined;
   const timer = setInterval(() => {
-    if (!cleanup) cleanup = processStorageCleanup().catch(() => {
-      console.error(JSON.stringify({ event: 'cleanup_worker_failed' }));
-    }).finally(() => { cleanup = undefined; });
+    if (!cleanup)
+      cleanup = processStorageCleanup()
+        .catch(() => {
+          console.error(JSON.stringify({ event: "cleanup_worker_failed" }));
+        })
+        .finally(() => {
+          cleanup = undefined;
+        });
   }, 30000);
   timer.unref();
   let stopping = false;
@@ -43,11 +62,17 @@ async function main() {
     process.exit(0);
   };
 
-  process.on('SIGINT', () => void shutdown('SIGINT'));
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 }
 
 main().catch(() => {
-  console.error(JSON.stringify({ event: 'startup_failed', message: 'Check PostgreSQL, private Storage, migrations and environment configuration' }));
+  console.error(
+    JSON.stringify({
+      event: "startup_failed",
+      message:
+        "Check PostgreSQL, private Storage, migrations and environment configuration",
+    }),
+  );
   process.exit(1);
 });
