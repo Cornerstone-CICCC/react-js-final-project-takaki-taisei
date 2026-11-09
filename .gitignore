@@ -1,0 +1,15 @@
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db-*
+**/*.sqlite*
+**/*.backup
+**/*.dump
+**/backups/
+**/*.pem
+**/*.key
+**/node_modules/
+**/dist/
+**/test-results/
+**/playwright-report/

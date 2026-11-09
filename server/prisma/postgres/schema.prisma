@@ -1,0 +1,64 @@
+// Pseudo file system schema.
+// A single self-referential `Node` table models both folders and files.
+// Keep legacy field values and IDs unchanged during the migration.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String
+  email        String   @unique
+  passwordHash String
+  nodes        Node[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Node {
+  id       String  @id @default(cuid())
+  name     String
+  type     String // "FILE" | "FOLDER"
+  content  String? // text body — for text files (null for folders & binary files)
+  data     Bytes? // retained migration backup only; runtime never reads/writes it
+  mimeType String? // MIME type, e.g. "image/png" or "text/plain"
+  size     Int? // byte size of the file body
+
+  storageKey String? @unique
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  parentId String? // null only for each user's root folder
+
+  parent   Node?  @relation("NodeChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children Node[] @relation("NodeChildren")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // No two siblings may share a name inside the same folder.
+  @@unique([ownerId, parentId, name])
+  @@index([parentId])
+  @@index([ownerId])
+}
+
+// Deliberately no foreign key: jobs must survive deletion of nodes/users.
+model StorageCleanup {
+  id            String   @id @default(cuid())
+  storageKey    String   @unique
+  ownerId       String
+  nodeId        String
+  attempts      Int      @default(0)
+  lastError     String?
+  nextAttemptAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([nextAttemptAt])
+}

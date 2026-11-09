@@ -38,6 +38,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     }
   }
 
-  console.error('Unhandled error:', err);
+  if (err instanceof SyntaxError && 'status' in err && err.status === 400) {
+    return res.status(400).json({ error: 'ValidationError', message: 'Invalid JSON' });
+  }
+  if (typeof err === 'object' && err && 'type' in err && err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'PayloadTooLarge', message: 'Request body too large' });
+  }
+  console.error(JSON.stringify({ event: 'request_failed', type: err instanceof Error ? err.name : 'unknown' }));
   return res.status(500).json({ error: 'InternalServerError', message: 'Something went wrong' });
 }

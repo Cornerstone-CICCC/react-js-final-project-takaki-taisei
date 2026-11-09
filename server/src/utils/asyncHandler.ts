@@ -8,5 +8,8 @@ type Handler = (req: Request, res: Response, next: NextFunction) => Promise<unkn
  */
 export const asyncHandler =
   (fn: Handler) => (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    if (res.destroyed) return;
+    const lease = res.locals.transferLease;
+    lease?.start();
+    Promise.resolve().then(() => fn(req, res, next)).catch(next).finally(() => lease?.done());
   };

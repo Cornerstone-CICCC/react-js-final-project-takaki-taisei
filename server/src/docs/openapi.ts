@@ -15,9 +15,9 @@ export const openapiSpec = {
     title: 'Pseudo File System API',
     version: '1.0.0',
     description:
-      'A virtual file system. Folders and files are **simulated in SQLite** — no real OS ' +
+      'A virtual file system. Folders and files are **stored in PostgreSQL** — no real OS ' +
       'files are touched. Text files store an editable `content` string; binary files ' +
-      '(PNG, PDF, …) are uploaded and stored as BLOBs, then served via `/nodes/{id}/raw`. ' +
+      '(PNG, PDF, …) are uploaded to private Supabase Storage, then served via `/nodes/{id}/raw`. ' +
       'All JSON responses are wrapped as `{ "data": ... }`.',
   },
   servers: [{ url: 'http://localhost:4000/api', description: 'Local dev server' }],
@@ -102,7 +102,7 @@ export const openapiSpec = {
     '/nodes/upload': {
       post: {
         tags: ['Files'],
-        summary: 'Upload a binary file (PNG, PDF, …) — stored as a BLOB',
+        summary: 'Upload a binary file (PNG, PDF, …) — stored in private Supabase Storage',
         requestBody: {
           required: true,
           content: {

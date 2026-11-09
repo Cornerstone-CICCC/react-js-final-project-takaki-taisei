@@ -1,0 +1,2 @@
+# このマイグレーション履歴がPostgreSQL用であることをPrismaに知らせる設定
+provider = "postgresql"

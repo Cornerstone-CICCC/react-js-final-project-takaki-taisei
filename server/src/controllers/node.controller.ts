@@ -73,10 +73,13 @@ export async function uploadNode(req: Request, res: Response) {
 
 export async function getRaw(req: Request, res: Response) {
   const raw = await service.getRaw(getUserId(req), String(req.params.id));
-  res.type(raw.mimeType);
+  const inline = req.query.download !== "1" && (raw.kind === "text" || ["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"].includes(raw.mimeType));
+  res.type(raw.kind === "text" ? "text/plain; charset=utf-8" : raw.mimeType);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
   res.setHeader(
     "Content-Disposition",
-    `inline; filename="${encodeURIComponent(raw.name)}"`,
+    `${inline ? "inline" : "attachment"}; filename="${encodeURIComponent(raw.name)}"; filename*=UTF-8''${encodeURIComponent(raw.name).replace(/['()*]/g, (c) => '%' + c.charCodeAt(0).toString(16))}`,
   );
   res.send(raw.kind === "binary" ? raw.buffer : raw.text);
 }
