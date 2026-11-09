@@ -1,6 +1,6 @@
 import type { LoginDataType, SignupDataType } from "../../types/auth.types";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000/api";
 
 export async function loginUser(loginData: LoginDataType) {
   const res = await fetch(`${backendUrl}/auth/login`, {

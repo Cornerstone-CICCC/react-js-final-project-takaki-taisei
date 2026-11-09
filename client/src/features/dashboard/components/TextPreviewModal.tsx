@@ -10,13 +10,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { BreadCrumb, NodeItem } from "../types";
-import { getRawNodeUrl } from "../../../api/contents/contents.api";
+import { getRawNodeUrl, renameNode } from "../../../api/contents/contents.api";
 import { useModalAccessibility } from "../hooks/useModalAccessibility";
+import { useState } from "react";
 
 type Props = {
   onClose: () => void;
   file: NodeItem | null;
   breadCrumbs: BreadCrumb[];
+  onSaved: (file: NodeItem) => Promise<void>;
 };
 
 const extentionTypeMap: Record<string, string> = {
@@ -178,8 +180,21 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleString();
 }
 
-function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
-  const dialogRef = useModalAccessibility(onClose);
+function TextPreviewModal({ onClose, file, breadCrumbs, onSaved }: Props) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(file?.content ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const dialogRef = useModalAccessibility(onClose, saving);
+  async function save() {
+    if (!file || saving) return;
+    setSaving(true); setError("");
+    try {
+      const updated = await renameNode(file.id, file.name, draft);
+      await onSaved(updated); setEditing(false);
+    } catch (e) { setError(e instanceof Error ? e.message : "Failed to save text"); }
+    finally { setSaving(false); }
+  }
   function generateViewBreadCrumb() {
     const breadCrumNames = breadCrumbs.map((bc) => bc.name);
     return breadCrumNames.join(" / ");
@@ -211,7 +226,7 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 preview-backdrop backdrop-blur-lg bg-black/40"
-      onClick={() => onClose()}
+      onClick={() => { if (!saving) onClose(); }}
     >
       <div
         ref={dialogRef}
@@ -236,10 +251,16 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-sm">
+            {file?.content != null && (
+              <button type="button" disabled={saving} className="px-md py-2 bg-primary text-on-primary rounded-full"
+                onClick={() => { if (editing) void save(); else { setDraft(file.content ?? ""); setEditing(true); } }}>
+                {saving ? "Saving..." : editing ? "Save text" : "Edit text"}
+              </button>
+            )}
             {file && (
               <>
                 <a
-                  href={rawUrl}
+                  href={getRawNodeUrl(file.id, true)}
                   download
                   className="flex items-center gap-2 px-md py-2 bg-primary text-on-primary rounded-full text-label-md font-label-md hover:opacity-90 transition-all active:scale-95"
                 >
@@ -262,6 +283,7 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
               className="p-2 hover:bg-surface-container rounded-full transition-colors"
               type="button"
               aria-label="Close preview"
+              disabled={saving}
               onClick={() => onClose()}
             >
               <CircleX className="material-symbols-outlined text-on-surface-variant" />
@@ -308,7 +330,12 @@ function TextPreviewModal({ onClose, file, breadCrumbs }: Props) {
               />
             )}
 
-            {file && isText && !isPdf && (
+            {error && <p role="alert" className="text-red-600">{error}</p>}
+            {file && editing && (
+              <textarea aria-label="Text content" value={draft} onChange={(e) => setDraft(e.target.value)} disabled={saving}
+                className="h-full w-full p-lg font-mono text-sm" maxLength={1000000} />
+            )}
+            {file && isText && !isPdf && !editing && (
               <pre className="h-full w-full overflow-auto whitespace-pre-wrap rounded-lg bg-surface-container-lowest p-lg font-mono text-sm text-on-surface">
                 {file.content ?? "No text preview is available for this file."}
               </pre>

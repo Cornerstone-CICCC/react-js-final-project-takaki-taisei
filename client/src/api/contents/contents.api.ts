@@ -25,7 +25,7 @@ export async function request<T>(
   }
 
   if (!res.ok) {
-    throw new Error(data?.error || data?.message || "Request Failed");
+    throw new Error(data?.message || data?.error || "Request Failed");
   }
   return data.data;
 }
@@ -119,12 +119,12 @@ export async function uploadBinaryFile(
   }
 
   if (!res.ok) {
-    throw new Error(data?.error || data?.message || "Failed to upload");
+    throw new Error(data?.message || data?.error || "Failed to upload");
   }
 
   return data.data;
 }
 
-export function getRawNodeUrl(id: string) {
-  return `${backendUrl}/nodes/${id}/raw`;
+export function getRawNodeUrl(id: string, download = false) {
+  return `${backendUrl}/nodes/${id}/raw${download ? '?download=1' : ''}`;
 }

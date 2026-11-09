@@ -533,6 +533,7 @@ function Dashboard() {
           onClose={onClose}
           file={selectedFile}
           breadCrumbs={selectedFile?.path ?? breadCrumbs}
+          onSaved={async (file) => { setSelectedFile(file); await refreshAfterMutation(); }}
         />
       )}
 
