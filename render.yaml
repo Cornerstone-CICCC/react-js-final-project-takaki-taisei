@@ -1,0 +1,34 @@
+# Prepared deployment configuration. Creating a service requires explicit approval.
+services:
+  - type: web
+    name: storage-app
+    runtime: node
+    branch: feat/supabase-postgres-storage
+    plan: starter
+    autoDeployTrigger: off
+    buildCommand: npm ci --include=dev --prefix server && npm ci --include=dev --prefix client && npm --prefix server run build && VITE_BACKEND_URL=/api npm --prefix client run build
+    preDeployCommand: cd server && npm run prisma:deploy
+    startCommand: cd server && npm start
+    healthCheckPath: /api/ready
+    maxShutdownDelaySeconds: 65
+    envVars:
+      - key: NODE_VERSION
+        value: 24.13.1
+      - key: NODE_ENV
+        value: production
+      - key: STATIC_DIR
+        value: ../client/dist
+      - key: DATABASE_URL
+        sync: false
+      - key: NODE_EXTRA_CA_CERTS
+        value: /etc/secrets/supabase-ca.crt
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: user-files
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false

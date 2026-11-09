@@ -1,0 +1,35 @@
+name: Verify Storage App
+on:
+  push:
+    branches: [feat/supabase-postgres-storage]
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: isolated-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.1
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+      - run: npm ci --prefix server && npm ci --prefix client
+      - run: npm --prefix server run build && npm --prefix server test
+      - run: npm --prefix client run lint && npm --prefix client run build
+      - run: npx playwright install --with-deps chromium
+        working-directory: server
+      - run: npm run test:integration
+        working-directory: server
+        env:
+          TEST_DATABASE_ADMIN_URL: postgresql://postgres:isolated-ci-only@127.0.0.1:5432/postgres
+          RUN_BROWSER_TESTS: 'yes'
