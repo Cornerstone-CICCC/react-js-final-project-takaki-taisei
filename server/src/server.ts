@@ -6,7 +6,28 @@ import { processStorageCleanup } from "./services/storageCleanup.service";
 
 async function main() {
   console.info("[STARTUP] 1. Validating environment");
-  validateEnvironment();
+  try {
+    validateEnvironment();
+  } catch (error) {
+    const safeMessages = new Set([
+      "DATABASE_URL must use PostgreSQL",
+      "Remote PostgreSQL requires sslmode=require and sslaccept=strict",
+      "JWT_SECRET must contain at least 32 characters",
+      "CORS_ORIGIN requires explicit origins",
+      "SUPABASE_SECRET_KEY must be a server secret key",
+      "Storage requires HTTPS",
+      "STORAGE_TIMEOUT_MS must be 1–30000",
+    ]);
+
+    const message =
+      error instanceof Error && safeMessages.has(error.message)
+        ? error.message
+        : "Invalid URL or unknown environment validation error";
+
+    console.error("[STARTUP] Environment validation failed:", message);
+
+    throw error;
+  }
 
   console.info("[STARTUP] 2. Connecting PostgreSQL");
   await prisma.$connect();
