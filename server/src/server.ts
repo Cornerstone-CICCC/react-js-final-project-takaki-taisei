@@ -30,7 +30,28 @@ async function main() {
   }
 
   console.info("[STARTUP] 2. Connecting PostgreSQL");
-  await prisma.$connect();
+
+  try {
+    await prisma.$connect();
+  } catch (error: unknown) {
+    let errorCode = "UNKNOWN";
+
+    if (
+      error !== null &&
+      typeof error === "object" &&
+      "errorCode" in error &&
+      typeof error.errorCode === "string" &&
+      /^P\d{4}$/.test(error.errorCode)
+    ) {
+      errorCode = error.errorCode;
+    }
+
+    console.error(
+      JSON.stringify({ event: "postgres_connection_failed", errorCode }),
+    );
+
+    throw error;
+  }
 
   console.info("[STARTUP] 3. Verifying Supabase Storage");
   await storage.assertPrivate();
